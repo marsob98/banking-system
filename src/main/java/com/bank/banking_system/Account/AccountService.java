@@ -2,17 +2,23 @@ package com.bank.banking_system.Account;
 
 import com.bank.banking_system.Customer.Customer;
 import com.bank.banking_system.Customer.CustomerRepository;
+import com.bank.banking_system.Transaction.Transaction;
+import com.bank.banking_system.Transaction.TransactionRepository;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AccountService {
     private final AccountRepository accountRepository;
     private final CustomerRepository customerRepository;
+    private final TransactionRepository transactionRepository;
+
 
     public AccountService(AccountRepository accountRepository,
-                          CustomerRepository customerRepository) {
+                          CustomerRepository customerRepository,
+                          TransactionRepository transactionRepository) {
         this.accountRepository = accountRepository;
         this.customerRepository = customerRepository;
+        this.transactionRepository = transactionRepository;
     }
 
     public Account createAccount(String accountType, Long customerId) {
@@ -30,6 +36,8 @@ public class AccountService {
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
         account.setBalance(account.getBalance() + amount);
+        Transaction transaction = new Transaction("DEPOSIT", amount, null, account);
+        transactionRepository.save(transaction);
         return accountRepository.save(account);
     }
 
@@ -42,6 +50,8 @@ public class AccountService {
         }
 
         account.setBalance(account.getBalance() - amount);
+        Transaction transaction = new Transaction("WITHDRAW", amount, account, null);
+        transactionRepository.save(transaction);
         return accountRepository.save(account);
     }
 
@@ -58,6 +68,8 @@ public class AccountService {
 
         source.setBalance(source.getBalance() - amount);
         target.setBalance(target.getBalance() + amount);
+        Transaction transaction = new Transaction("TRANSFER", amount, source, target);
+        transactionRepository.save(transaction);
 
         accountRepository.save(source);
         accountRepository.save(target);
