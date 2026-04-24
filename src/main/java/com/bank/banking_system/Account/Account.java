@@ -34,8 +34,8 @@ public class Account {
         this.accountNumber = accountNumber;
         this.accountType = accountType;
         this.customer = customer;
-        this.balance = 0.00;
-        this.isBlocked = false;
+        balance = 0.00;
+        isBlocked = false;
     }
 
     public Long getId() {

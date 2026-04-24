@@ -45,4 +45,22 @@ public class AccountService {
         return accountRepository.save(account);
     }
 
+    public void transfer(Long fromAccId, Long toAccId, Double amount) {
+        Account source = accountRepository.findById(fromAccId)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+
+        Account target = accountRepository.findById(toAccId)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+
+        if (source.getBalance() - amount < 0) {
+            throw new RuntimeException("Insufficient funds");
+        }
+
+        source.setBalance(source.getBalance() - amount);
+        target.setBalance(target.getBalance() + amount);
+
+        accountRepository.save(source);
+        accountRepository.save(target);
+    }
+
 }

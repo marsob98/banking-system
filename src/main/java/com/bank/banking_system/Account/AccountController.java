@@ -37,4 +37,12 @@ public class AccountController {
     public Account withdraw(@PathVariable Long id, @RequestParam Double amount) {
         return accountService.withdraw(id, amount);
     }
+
+    @PutMapping("/transfer")
+    public String transfer(@RequestParam Long fromId,
+                           @RequestParam Long toId,
+                           @RequestParam Double amount) {
+        accountService.transfer(fromId, toId, amount);
+        return "Transfer successful";
+    }
 }
