@@ -2,6 +2,8 @@ package com.bank.banking_system.Account;
 
 import com.bank.banking_system.Customer.Customer;
 import com.bank.banking_system.Customer.CustomerRepository;
+import com.bank.banking_system.Exception.InsufficientFundsException;
+import com.bank.banking_system.Exception.ResourceNotFoundException;
 import com.bank.banking_system.Transaction.Transaction;
 import com.bank.banking_system.Transaction.TransactionRepository;
 import org.springframework.stereotype.Service;
@@ -23,7 +25,7 @@ public class AccountService {
 
     public Account createAccount(String accountType, Long customerId) {
         Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new RuntimeException("Customer not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
 
         String accountNumber = "PL" + System. currentTimeMillis();
 
@@ -33,7 +35,7 @@ public class AccountService {
 
     public Account deposit(Long accountId, Double amount) {
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
 
         account.setBalance(account.getBalance() + amount);
         Transaction transaction = new Transaction("DEPOSIT", amount, null, account);
@@ -43,7 +45,7 @@ public class AccountService {
 
     public Account withdraw(Long accountId, Double amount) {
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
 
         if (account.getBalance() - amount < 0) {
             throw new RuntimeException("Insufficient funds");
@@ -57,13 +59,13 @@ public class AccountService {
 
     public void transfer(Long fromAccId, Long toAccId, Double amount) {
         Account source = accountRepository.findById(fromAccId)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
 
         Account target = accountRepository.findById(toAccId)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
 
         if (source.getBalance() - amount < 0) {
-            throw new RuntimeException("Insufficient funds");
+            throw new InsufficientFundsException("Insufficient funds");
         }
 
         source.setBalance(source.getBalance() - amount);
