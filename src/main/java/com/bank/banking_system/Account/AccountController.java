@@ -22,7 +22,9 @@ public class AccountController {
 
     @GetMapping
     public List<AccountResponse> getAllAccounts() {
-        return accountRepository.findAll().stream().map(accountService::toResponse).toList();
+        return accountRepository.findAll().stream()
+                .map(accountService::toResponse)
+                .toList();
     }
 
     @PostMapping
