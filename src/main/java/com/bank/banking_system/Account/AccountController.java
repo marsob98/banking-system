@@ -1,5 +1,6 @@
 package com.bank.banking_system.Account;
 
+import com.bank.banking_system.Account.dto.AccountResponse;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,23 +20,26 @@ public class AccountController {
 
 
     @GetMapping
-    public List<Account> getAllAccounts() {
-        return accountRepository.findAll();
+    public List<AccountResponse> getAllAccounts() {
+        return accountRepository.findAll().stream().map(accountService::toResponse).toList();
     }
 
     @PostMapping
-    public Account createAccount(@RequestParam String accountType, @RequestParam Long customerId) {
-        return accountService.createAccount(accountType, customerId);
+    public AccountResponse createAccount(@RequestParam String accountType, @RequestParam Long customerId) {
+        Account account = accountService.createAccount(accountType, customerId);
+        return accountService.toResponse(account);
     }
 
     @PutMapping("/{id}/deposit")
-    public Account deposit(@PathVariable Long id, @RequestParam Double amount) {
-        return accountService.deposit(id, amount);
+    public AccountResponse deposit(@PathVariable Long id, @RequestParam Double amount) {
+        Account account = accountService.deposit(id, amount);
+        return accountService.toResponse(account);
     }
 
     @PutMapping("/{id}/withdraw")
-    public Account withdraw(@PathVariable Long id, @RequestParam Double amount) {
-        return accountService.withdraw(id, amount);
+    public AccountResponse withdraw(@PathVariable Long id, @RequestParam Double amount) {
+        Account account = accountService.withdraw(id, amount);
+        return accountService.toResponse(account);
     }
 
     @PutMapping("/transfer")

@@ -1,5 +1,6 @@
 package com.bank.banking_system.Account;
 
+import com.bank.banking_system.Account.dto.AccountResponse;
 import com.bank.banking_system.Customer.Customer;
 import com.bank.banking_system.Customer.CustomerRepository;
 import com.bank.banking_system.Exception.InsufficientFundsException;
@@ -77,4 +78,14 @@ public class AccountService {
         accountRepository.save(target);
     }
 
+    public AccountResponse toResponse(Account account) {
+        String ownerName = account.getCustomer().getFirstName() + " " + account.getCustomer().getLastName();
+        return new AccountResponse(
+                account.getId(),
+                account.getAccountNumber(),
+                account.getAccountType(),
+                account.getBalance(),
+                account.getBlocked(),
+                ownerName);
+    }
 }
