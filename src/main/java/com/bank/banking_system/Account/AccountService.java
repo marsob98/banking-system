@@ -1,6 +1,7 @@
 package com.bank.banking_system.Account;
 
 import com.bank.banking_system.Account.dto.AccountResponse;
+import com.bank.banking_system.Account.dto.TransferResponse;
 import com.bank.banking_system.Customer.Customer;
 import com.bank.banking_system.Customer.CustomerRepository;
 import com.bank.banking_system.Exception.InsufficientFundsException;
@@ -49,7 +50,7 @@ public class AccountService {
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
 
         if (account.getBalance() - amount < 0) {
-            throw new RuntimeException("Insufficient funds");
+            throw new InsufficientFundsException("Insufficient funds");
         }
 
         account.setBalance(account.getBalance() - amount);
@@ -58,7 +59,7 @@ public class AccountService {
         return accountRepository.save(account);
     }
 
-    public void transfer(Long fromAccId, Long toAccId, Double amount) {
+    public TransferResponse transfer(Long fromAccId, Long toAccId, Double amount) {
         Account source = accountRepository.findById(fromAccId)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
 
@@ -76,6 +77,13 @@ public class AccountService {
 
         accountRepository.save(source);
         accountRepository.save(target);
+
+        return new TransferResponse(
+                "Transfer successful",
+                amount,
+                source.getAccountNumber(),
+                target.getAccountNumber()
+        );
     }
 
     public AccountResponse toResponse(Account account) {

@@ -1,6 +1,7 @@
 package com.bank.banking_system.Account;
 
 import com.bank.banking_system.Account.dto.AccountResponse;
+import com.bank.banking_system.Account.dto.TransferResponse;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -43,10 +44,10 @@ public class AccountController {
     }
 
     @PutMapping("/transfer")
-    public String transfer(@RequestParam Long fromId,
-                           @RequestParam Long toId,
-                           @RequestParam Double amount) {
+    public TransferResponse transfer(@RequestParam Long fromId,
+                                     @RequestParam Long toId,
+                                     @RequestParam Double amount) {
         accountService.transfer(fromId, toId, amount);
-        return "Transfer successful";
+        return accountService.transfer(fromId, toId, amount);
     }
 }
