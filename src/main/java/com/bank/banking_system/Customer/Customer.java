@@ -23,7 +23,7 @@ public class Customer {
 
     @Column(unique = true, nullable = false, length = 11)
     @NotBlank(message = "PESEL is required")
-    @Size(min = 11, max = 11, message = "PESEL must habe 11 digits")
+    @Size(min = 11, max = 11, message = "PESEL must have 11 digits")
     @Pattern(regexp = "\\d{11}", message = "PESEL must contain only digits")
     private String pesel;
 
