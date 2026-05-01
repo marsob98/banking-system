@@ -5,6 +5,7 @@ import com.bank.banking_system.Account.dto.TransactionResponse;
 import com.bank.banking_system.Account.dto.TransferResponse;
 import com.bank.banking_system.Customer.Customer;
 import com.bank.banking_system.Customer.CustomerRepository;
+import com.bank.banking_system.Exception.AccountBlockedException;
 import com.bank.banking_system.Exception.InsufficientFundsException;
 import com.bank.banking_system.Exception.ResourceNotFoundException;
 import com.bank.banking_system.Transaction.Transaction;
@@ -56,48 +57,57 @@ public class AccountService {
     }
 
     @Transactional
-    public Account deposit(Long accountId, Double amount) {
-        Account account = accountRepository.findById(accountId)
+    public Account findAccountByNumber(String accountNumber) {
+        return accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+
+    }
+
+
+    @Transactional
+    public Account deposit(Long accountId, Double amount) {
+        Account account = findAccountById(accountId);
+        if (amount <= 0) {
+            throw new IllegalArgumentException("More than 0");
+        }
+        checkAccountIsBlocked(account);
 
         account.setBalance(account.getBalance() + amount);
         Transaction transaction = new Transaction("DEPOSIT", amount, null, account);
+
         transactionRepository.save(transaction);
         return accountRepository.save(account);
     }
 
     @Transactional
     public Account withdraw(Long accountId, Double amount) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+        Account account = findAccountById(accountId);
 
-        if (account.getBalance() - amount < 0) {
-            throw new InsufficientFundsException("Insufficient funds");
-        }
+        checkInsufficientFunds(account, amount);
+        checkAccountIsBlocked(account);
 
         account.setBalance(account.getBalance() - amount);
         Transaction transaction = new Transaction("WITHDRAW", amount, account, null);
+
         transactionRepository.save(transaction);
         return accountRepository.save(account);
     }
 
     @Transactional
     public TransferResponse transfer(Long fromAccId, Long toAccId, Double amount) {
-        Account source = accountRepository.findById(fromAccId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+        Account source = findAccountById(fromAccId);
+        Account target = findAccountById(toAccId);
 
-        Account target = accountRepository.findById(toAccId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+        checkInsufficientFunds(source, amount);
+        checkAccountIsBlocked(source);
+        checkAccountIsBlocked(target);
 
-        if (source.getBalance() - amount < 0) {
-            throw new InsufficientFundsException("Insufficient funds");
-        }
 
         source.setBalance(source.getBalance() - amount);
         target.setBalance(target.getBalance() + amount);
         Transaction transaction = new Transaction("TRANSFER", amount, source, target);
-        transactionRepository.save(transaction);
 
+        transactionRepository.save(transaction);
         accountRepository.save(source);
         accountRepository.save(target);
 
@@ -111,16 +121,14 @@ public class AccountService {
 
     @Transactional
     public Account blockAccount(Long accountId) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+        Account account = findAccountById(accountId);
         account.setBlocked(true);
         return accountRepository.save(account);
     }
 
     @Transactional
     public Account unBlockAccount(Long accountId) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+        Account account = findAccountById(accountId);
         account.setBlocked(false);
         return accountRepository.save(account);
     }
@@ -149,5 +157,29 @@ public class AccountService {
                 source,
                 target,
                 transaction.getTimestamp().toString());
+    }
+
+    private void checkAccountIsBlocked(Account account) {
+        if (account.getBlocked()) {
+            throw new AccountBlockedException("Account " + account.getAccountNumber() + " is blocked");
+        }
+    }
+
+    private void checkInsufficientFunds(Account account, Double amount) {
+        if (account.getBalance() - amount < 0) {
+            throw new InsufficientFundsException("Insufficient funds");
+        }
+    }
+
+    private Account findAccountById(Long id) {
+        return accountRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+    }
+
+    public void bankStatsResponse() {
+        System.out.println("Customers in total: " + customerRepository.count());
+        System.out.println("Accounts in total: " + accountRepository.count());
+        System.out.println("Money in the bank: " + accountRepository.findAll().stream().mapToDouble(Account::getBalance).sum());
+        System.out.println("Transactions in total: " + transactionRepository.count());
     }
 }

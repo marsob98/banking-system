@@ -30,6 +30,12 @@ public class AccountController {
         return accountService.getAllTransactionsForAcc(id);
     }
 
+    @GetMapping("/number/{id}")
+    public AccountResponse findAccountByNumber(@PathVariable String accountNumber) {
+        Account accountByNumber = accountService.findAccountByNumber(accountNumber);
+        return accountService.toResponse(accountByNumber);
+    }
+
     @PostMapping
     public AccountResponse createAccount(@RequestParam String accountType, @RequestParam Long customerId) {
         Account account = accountService.createAccount(accountType, customerId);
