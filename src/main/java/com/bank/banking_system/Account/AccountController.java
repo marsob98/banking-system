@@ -5,6 +5,7 @@ import com.bank.banking_system.Account.dto.TransferResponse;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/accounts")
@@ -49,7 +50,18 @@ public class AccountController {
     public TransferResponse transfer(@RequestParam Long fromId,
                                      @RequestParam Long toId,
                                      @RequestParam Double amount) {
-        accountService.transfer(fromId, toId, amount);
         return accountService.transfer(fromId, toId, amount);
+    }
+
+    @PutMapping("/{id}/block")
+    public AccountResponse blockAccount(@PathVariable Long id) {
+        Account account = accountService.blockAccount(id);
+        return accountService.toResponse(account);
+    }
+
+    @PutMapping("/{id}/unblock")
+    public AccountResponse unblockAccount(@PathVariable Long id) {
+        Account account = accountService.unBlockAccount(id);
+        return accountService.toResponse(account);
     }
 }

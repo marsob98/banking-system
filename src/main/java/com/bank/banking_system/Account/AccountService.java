@@ -86,6 +86,20 @@ public class AccountService {
         );
     }
 
+    public Account blockAccount(Long accountId) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+        account.setBlocked(true);
+        return accountRepository.save(account);
+    }
+
+    public Account unBlockAccount(Long accountId) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+        account.setBlocked(false);
+        return accountRepository.save(account);
+    }
+
     public AccountResponse toResponse(Account account) {
         String ownerName = account.getCustomer().getFirstName() + " " + account.getCustomer().getLastName();
         return new AccountResponse(
