@@ -28,17 +28,12 @@ public class AccountController {
 
     @GetMapping
     public List<AccountResponse> getAllAccounts() {
-        return accountRepository.findAll().stream()
-                .map(accountService::toResponse)
-                .toList();
+        return accountService.getAllAccounts();
     }
 
     @GetMapping("/{id}/transactions")
     public List<TransactionResponse> getAllTransactionsForAcc(@PathVariable Long id) {
-        return transactionRepository.findBySourceAccountIdOrTargetAccountId(id, id).stream()
-                .map(accountService::toTransactionResponse)
-                .toList();
-
+        return accountService.getAllTransactionsForAcc(id);
     }
 
     @PostMapping
@@ -77,6 +72,8 @@ public class AccountController {
         Account account = accountService.unBlockAccount(id);
         return accountService.toResponse(account);
     }
+
+
 
 
 }

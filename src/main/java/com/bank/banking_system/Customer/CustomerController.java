@@ -10,10 +10,13 @@ import java.util.List;
 public class CustomerController {
 
     private final CustomerRepository customerRepository;
+    private final CustomerService customerService;
 
-    public CustomerController(CustomerRepository customerRepository) {
+    public CustomerController(CustomerRepository customerRepository, CustomerService customerService) {
         this.customerRepository = customerRepository;
+        this.customerService = customerService;
     }
+
 
     @GetMapping
     public List<Customer> getAllCustomers() {
@@ -22,7 +25,12 @@ public class CustomerController {
 
     @PostMapping
     public Customer createCustomer(@Valid @RequestBody Customer customer) {
-        return customerRepository.save(customer);
+        return customerService.createCustomer(customer);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteCustomer(@PathVariable Long id) {
+        customerService.deleteCustomer(id);
     }
 
 

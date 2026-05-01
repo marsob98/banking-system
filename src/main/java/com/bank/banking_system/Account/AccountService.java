@@ -12,19 +12,35 @@ import com.bank.banking_system.Transaction.TransactionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 public class AccountService {
     private final AccountRepository accountRepository;
     private final CustomerRepository customerRepository;
     private final TransactionRepository transactionRepository;
+    private final AccountService accountService;
+    private final AccountResponse accountResponse;
 
 
     public AccountService(AccountRepository accountRepository,
                           CustomerRepository customerRepository,
-                          TransactionRepository transactionRepository) {
+                          TransactionRepository transactionRepository,
+                          AccountService accountService,
+                          AccountResponse accountResponse) {
         this.accountRepository = accountRepository;
         this.customerRepository = customerRepository;
         this.transactionRepository = transactionRepository;
+        this.accountService = accountService;
+        this.accountResponse = accountResponse;
+    }
+
+
+    @Transactional
+    public List<AccountResponse> getAllAccounts() {
+        return accountRepository.findAll().stream()
+                .map(accountService::toResponse)
+                .toList();
     }
 
     @Transactional
@@ -36,6 +52,13 @@ public class AccountService {
 
         Account account = new Account(accountNumber, accountType, customer);
         return accountRepository.save(account);
+    }
+
+    @Transactional
+    public List<TransactionResponse> getAllTransactionsForAcc(Long id) {
+        return transactionRepository.findBySourceAccountIdOrTargetAccountId(id, id).stream()
+                .map(accountService::toTransactionResponse)
+                .toList();
     }
 
     @Transactional
