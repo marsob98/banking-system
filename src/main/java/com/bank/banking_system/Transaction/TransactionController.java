@@ -1,5 +1,6 @@
 package com.bank.banking_system.Transaction;
 
+import com.bank.banking_system.Account.AccountService;
 import com.bank.banking_system.Account.dto.TransactionResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,14 +15,19 @@ import java.util.stream.Collectors;
 public class TransactionController {
 
     private final TransactionRepository transactionRepository;
+    private final AccountService accountService;
 
-    public TransactionController(TransactionRepository transactionRepository) {
+    public TransactionController(TransactionRepository transactionRepository, AccountService accountService) {
         this.transactionRepository = transactionRepository;
+        this.accountService = accountService;
     }
 
     @GetMapping
     public List<TransactionResponse> getAllTransactions() {
-        return transactionRepository.findAll();
+        return transactionRepository.findAll().stream()
+                .map(accountService::toTransactionResponse)
+                .toList();
     }
 
 }
+
