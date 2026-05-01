@@ -19,27 +19,21 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final CustomerRepository customerRepository;
     private final TransactionRepository transactionRepository;
-    private final AccountService accountService;
-    private final AccountResponse accountResponse;
 
 
     public AccountService(AccountRepository accountRepository,
                           CustomerRepository customerRepository,
-                          TransactionRepository transactionRepository,
-                          AccountService accountService,
-                          AccountResponse accountResponse) {
+                          TransactionRepository transactionRepository) {
         this.accountRepository = accountRepository;
         this.customerRepository = customerRepository;
         this.transactionRepository = transactionRepository;
-        this.accountService = accountService;
-        this.accountResponse = accountResponse;
     }
 
 
     @Transactional
     public List<AccountResponse> getAllAccounts() {
         return accountRepository.findAll().stream()
-                .map(accountService::toResponse)
+                .map(this::toResponse)
                 .toList();
     }
 
@@ -57,7 +51,7 @@ public class AccountService {
     @Transactional
     public List<TransactionResponse> getAllTransactionsForAcc(Long id) {
         return transactionRepository.findBySourceAccountIdOrTargetAccountId(id, id).stream()
-                .map(accountService::toTransactionResponse)
+                .map(this::toTransactionResponse)
                 .toList();
     }
 

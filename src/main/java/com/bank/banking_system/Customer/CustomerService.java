@@ -2,10 +2,11 @@ package com.bank.banking_system.Customer;
 
 import com.bank.banking_system.Exception.DuplicatePeselException;
 import com.bank.banking_system.Exception.ResourceNotFoundException;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
-
+@Service
 public class CustomerService {
     private final CustomerRepository customerRepository;
 
@@ -16,7 +17,8 @@ public class CustomerService {
     @Transactional
     public Customer createCustomer(Customer customer) {
         customerRepository.findByPesel(customer.getPesel())
-                .orElseThrow(() -> new DuplicatePeselException("Pesel already exists"));
+                .ifPresent(existing -> {throw new DuplicatePeselException("Pesel already exists");
+                });
 
         return customerRepository.save(customer);
     }

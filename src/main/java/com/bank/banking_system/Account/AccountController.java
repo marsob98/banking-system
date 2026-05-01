@@ -12,17 +12,11 @@ import java.util.List;
 @RequestMapping("/api/accounts")
 public class AccountController {
 
-    private final AccountRepository accountRepository; 
     private final AccountService accountService;
-    private final TransactionRepository transactionRepository;
 
 
-    public AccountController(AccountRepository accountRepository,
-                             AccountService accountService,
-                             TransactionRepository transactionRepository) {
-        this.accountRepository = accountRepository;
+    public AccountController(AccountService accountService) {
         this.accountService = accountService;
-        this.transactionRepository = transactionRepository;
     }
 
 
