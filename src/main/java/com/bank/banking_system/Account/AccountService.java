@@ -1,6 +1,7 @@
 package com.bank.banking_system.Account;
 
 import com.bank.banking_system.Account.dto.AccountResponse;
+import com.bank.banking_system.Account.dto.BankStatsResponse;
 import com.bank.banking_system.Account.dto.TransactionResponse;
 import com.bank.banking_system.Account.dto.TransferResponse;
 import com.bank.banking_system.Customer.Customer;
@@ -176,10 +177,12 @@ public class AccountService {
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
     }
 
-    public void bankStatsResponse() {
-        System.out.println("Customers in total: " + customerRepository.count());
-        System.out.println("Accounts in total: " + accountRepository.count());
-        System.out.println("Money in the bank: " + accountRepository.findAll().stream().mapToDouble(Account::getBalance).sum());
-        System.out.println("Transactions in total: " + transactionRepository.count());
+    public BankStatsResponse bankStatsResponse() {
+        return new BankStatsResponse(
+                customerRepository.count(),
+                accountRepository.count(),
+                transactionRepository.count(),
+                accountRepository.findAll()
+                        .stream().mapToDouble(Account::getBalance).sum());
     }
 }

@@ -30,7 +30,7 @@ public class AccountController {
         return accountService.getAllTransactionsForAcc(id);
     }
 
-    @GetMapping("/number/{id}")
+    @GetMapping("/number/{accountNumber}")
     public AccountResponse findAccountByNumber(@PathVariable String accountNumber) {
         Account accountByNumber = accountService.findAccountByNumber(accountNumber);
         return accountService.toResponse(accountByNumber);

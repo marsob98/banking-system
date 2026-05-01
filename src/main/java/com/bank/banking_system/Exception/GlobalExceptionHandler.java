@@ -23,6 +23,27 @@ public class GlobalExceptionHandler {
         ));
     }
 
+    @ExceptionHandler(DuplicatePeselException.class)
+    public ResponseEntity<Map<String, Object>> handleDuplicatePesel(DuplicatePeselException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                "status", 409,
+                "error", "Duplicate",
+                "message", ex.getMessage(),
+                "timestamp", LocalDateTime.now()
+        ));
+    }
+
+    @ExceptionHandler(AccountBlockedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccountBlocked(AccountBlockedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                "status", 403,
+                "error", "Account blocked",
+                "message", ex.getMessage(),
+                "timestamp", LocalDateTime.now()
+        ));
+    }
+
+
     @ExceptionHandler(InsufficientFundsException.class)
     public ResponseEntity<Map<String, Object>> handleInsufficientFunds(InsufficientFundsException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
