@@ -1,11 +1,12 @@
 package com.bank.banking_system.Account;
 
 import com.bank.banking_system.Account.dto.AccountResponse;
+import com.bank.banking_system.Account.dto.TransactionResponse;
 import com.bank.banking_system.Account.dto.TransferResponse;
+import com.bank.banking_system.Transaction.TransactionRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/accounts")
@@ -13,11 +14,15 @@ public class AccountController {
 
     private final AccountRepository accountRepository; 
     private final AccountService accountService;
+    private final TransactionRepository transactionRepository;
 
 
-    public AccountController(AccountRepository accountRepository, AccountService accountService) {
+    public AccountController(AccountRepository accountRepository,
+                             AccountService accountService,
+                             TransactionRepository transactionRepository) {
         this.accountRepository = accountRepository;
         this.accountService = accountService;
+        this.transactionRepository = transactionRepository;
     }
 
 
@@ -26,6 +31,14 @@ public class AccountController {
         return accountRepository.findAll().stream()
                 .map(accountService::toResponse)
                 .toList();
+    }
+
+    @GetMapping("/{id}/transactions")
+    public List<TransactionResponse> getAllTransactionsForAcc(@PathVariable Long id) {
+        return transactionRepository.findBySourceAccountIdOrTargetAccountId(id, id).stream()
+                .map(accountService::toTransactionResponse)
+                .toList();
+
     }
 
     @PostMapping
@@ -64,4 +77,6 @@ public class AccountController {
         Account account = accountService.unBlockAccount(id);
         return accountService.toResponse(account);
     }
+
+
 }

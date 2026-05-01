@@ -1,6 +1,7 @@
 package com.bank.banking_system.Account;
 
 import com.bank.banking_system.Account.dto.AccountResponse;
+import com.bank.banking_system.Account.dto.TransactionResponse;
 import com.bank.banking_system.Account.dto.TransferResponse;
 import com.bank.banking_system.Customer.Customer;
 import com.bank.banking_system.Customer.CustomerRepository;
@@ -9,6 +10,7 @@ import com.bank.banking_system.Exception.ResourceNotFoundException;
 import com.bank.banking_system.Transaction.Transaction;
 import com.bank.banking_system.Transaction.TransactionRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AccountService {
@@ -25,6 +27,7 @@ public class AccountService {
         this.transactionRepository = transactionRepository;
     }
 
+    @Transactional
     public Account createAccount(String accountType, Long customerId) {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
@@ -35,6 +38,7 @@ public class AccountService {
         return accountRepository.save(account);
     }
 
+    @Transactional
     public Account deposit(Long accountId, Double amount) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
@@ -45,6 +49,7 @@ public class AccountService {
         return accountRepository.save(account);
     }
 
+    @Transactional
     public Account withdraw(Long accountId, Double amount) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
@@ -59,6 +64,7 @@ public class AccountService {
         return accountRepository.save(account);
     }
 
+    @Transactional
     public TransferResponse transfer(Long fromAccId, Long toAccId, Double amount) {
         Account source = accountRepository.findById(fromAccId)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
@@ -86,6 +92,7 @@ public class AccountService {
         );
     }
 
+    @Transactional
     public Account blockAccount(Long accountId) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
@@ -93,6 +100,7 @@ public class AccountService {
         return accountRepository.save(account);
     }
 
+    @Transactional
     public Account unBlockAccount(Long accountId) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
@@ -109,5 +117,20 @@ public class AccountService {
                 account.getBalance(),
                 account.getBlocked(),
                 ownerName);
+    }
+
+    public TransactionResponse toTransactionResponse(Transaction transaction) {
+        String source = transaction.getSourceAccount() != null ?
+                transaction.getSourceAccount().getAccountNumber() : null;
+        String target = transaction.getTargetAccount() != null ?
+                transaction.getTargetAccount().getAccountNumber() : null;
+
+        return new TransactionResponse(
+                transaction.getId(),
+                transaction.getType(),
+                transaction.getAmount(),
+                source,
+                target,
+                transaction.getTimestamp().toString());
     }
 }

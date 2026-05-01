@@ -1,11 +1,12 @@
 package com.bank.banking_system.Transaction;
 
+import com.bank.banking_system.Account.dto.TransactionResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-
+import java.util.stream.Collectors;
 
 
 @RestController
@@ -19,7 +20,7 @@ public class TransactionController {
     }
 
     @GetMapping
-    public List<Transaction> getAllTransactions() {
+    public List<TransactionResponse> getAllTransactions() {
         return transactionRepository.findAll();
     }
 
