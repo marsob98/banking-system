@@ -73,6 +73,11 @@ public class AccountController {
         return accountService.toResponse(account);
     }
 
+    @DeleteMapping({"/{id}"})
+    public void deleteAccount(@PathVariable Long id) {
+        accountService.deleteAccount(id);
+    }
+
 
 
 

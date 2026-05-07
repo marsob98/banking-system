@@ -103,7 +103,6 @@ public class AccountService {
         checkAccountIsBlocked(source);
         checkAccountIsBlocked(target);
 
-
         source.setBalance(source.getBalance() - amount);
         target.setBalance(target.getBalance() + amount);
         Transaction transaction = new Transaction("TRANSFER", amount, source, target);
@@ -184,5 +183,12 @@ public class AccountService {
                 transactionRepository.count(),
                 accountRepository.findAll()
                         .stream().mapToDouble(Account::getBalance).sum());
+    }
+
+    @Transactional
+    public void deleteAccount(Long id) {
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+        accountRepository.delete(account);
     }
 }
