@@ -1,5 +1,9 @@
 package com.bank.banking_system.Exception;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ResponseStatus(HttpStatus.CONFLICT)
 public class AccountHasActiveAccountsException extends RuntimeException {
     public AccountHasActiveAccountsException(String message) {
         super(message);

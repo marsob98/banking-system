@@ -56,9 +56,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccountHasActiveAccountsException.class)
     public ResponseEntity<Map<String, Object>> handleActiveAccounts (AccountHasActiveAccountsException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
-                "status", 403,
-                "error", "FORBIDDEN",
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                "status", 409,
+                "error", "CONFLICT",
                 "message", ex.getMessage(),
                 "timestamp", LocalDateTime.now()
         ));
