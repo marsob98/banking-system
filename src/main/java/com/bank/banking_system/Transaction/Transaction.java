@@ -2,11 +2,17 @@ package com.bank.banking_system.Transaction;
 
 import com.bank.banking_system.Account.Account;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "transactions")
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Transaction {
 
     @Id
@@ -28,37 +34,10 @@ public class Transaction {
 
     private LocalDateTime timestamp = LocalDateTime.now();
 
-    public Transaction() {
-    }
-
     public Transaction(TransactionType type, Double amount, Account sourceAccount, Account targetAccount) {
         this.type = type;
         this.amount = amount;
         this.sourceAccount = sourceAccount;
         this.targetAccount = targetAccount;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public TransactionType getType() {
-        return type;
-    }
-
-    public Double getAmount() {
-        return amount;
-    }
-
-    public Account getSourceAccount() {
-        return sourceAccount;
-    }
-
-    public Account getTargetAccount() {
-        return targetAccount;
-    }
-
-    public LocalDateTime getTimestamp() {
-        return timestamp;
     }
 }

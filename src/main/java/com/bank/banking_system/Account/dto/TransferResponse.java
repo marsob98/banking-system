@@ -1,17 +1,16 @@
 package com.bank.banking_system.Account.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
+@Data
+@AllArgsConstructor
 public class TransferResponse {
     private String message;
     private Double amount;
     private String fromAccount;
     private String toAccount;
 
-    public TransferResponse(String message, Double amount, String fromAccount, String toAccount) {
-        this.message = message;
-        this.amount = amount;
-        this.fromAccount = fromAccount;
-        this.toAccount = toAccount;
-    }
 
     public String getMessage() {
         return message;

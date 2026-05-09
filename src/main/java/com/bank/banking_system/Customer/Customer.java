@@ -4,11 +4,18 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "customers")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Customer {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -26,40 +33,4 @@ public class Customer {
     @Size(min = 11, max = 11, message = "PESEL must have 11 digits")
     @Pattern(regexp = "\\d{11}", message = "PESEL must contain only digits")
     private String pesel;
-
-    public Customer() {}
-
-    public Customer(String firstName, String lastName, String pesel) {
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.pesel = pesel;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public String getPesel() {
-        return pesel;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public void setPesel(String pesel) {
-        this.pesel = pesel;
-    }
 }

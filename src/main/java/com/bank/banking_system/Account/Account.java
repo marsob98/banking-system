@@ -2,9 +2,17 @@ package com.bank.banking_system.Account;
 
 import com.bank.banking_system.Customer.Customer;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "accounts")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Account {
 
     @Id
@@ -27,63 +35,9 @@ public class Account {
     @JoinColumn(name = "customer_id")
     private Customer customer;
 
-
-    public Account() {
-    }
-
     public Account(String accountNumber, AccountType accountType, Customer customer) {
         this.accountNumber = accountNumber;
         this.accountType = accountType;
-        this.customer = customer;
-        balance = 0.00;
-        isBlocked = false;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getAccountNumber() {
-        return accountNumber;
-    }
-
-    public void setAccountNumber(String accountNumber) {
-        this.accountNumber = accountNumber;
-    }
-
-    public AccountType getAccountType() {
-        return accountType;
-    }
-
-    public void setAccountType(AccountType accountType) {
-        this.accountType = accountType;
-    }
-
-    public Double getBalance() {
-        return balance;
-    }
-
-    public void setBalance(Double balance) {
-        this.balance = balance;
-    }
-
-    public Boolean getBlocked() {
-        return isBlocked;
-    }
-
-    public void setBlocked(Boolean blocked) {
-        isBlocked = blocked;
-    }
-
-    public Customer getCustomer() {
-        return customer;
-    }
-
-    public void setCustomer(Customer customer) {
         this.customer = customer;
     }
 }

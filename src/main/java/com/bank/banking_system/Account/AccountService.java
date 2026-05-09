@@ -123,14 +123,14 @@ public class AccountService {
     @Transactional
     public Account blockAccount(Long accountId) {
         Account account = findAccountById(accountId);
-        account.setBlocked(true);
+        account.setIsBlocked(true);
         return accountRepository.save(account);
     }
 
     @Transactional
     public Account unBlockAccount(Long accountId) {
         Account account = findAccountById(accountId);
-        account.setBlocked(false);
+        account.setIsBlocked(false);
         return accountRepository.save(account);
     }
 
@@ -141,7 +141,7 @@ public class AccountService {
                 account.getAccountNumber(),
                 account.getAccountType(),
                 account.getBalance(),
-                account.getBlocked(),
+                account.getIsBlocked(),
                 ownerName);
     }
 
@@ -161,7 +161,7 @@ public class AccountService {
     }
 
     private void checkAccountIsBlocked(Account account) {
-        if (account.getBlocked()) {
+        if (account.getIsBlocked()) {
             throw new AccountBlockedException("Account " + account.getAccountNumber() + " is blocked");
         }
     }
