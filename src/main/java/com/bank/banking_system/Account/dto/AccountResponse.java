@@ -1,14 +1,16 @@
 package com.bank.banking_system.Account.dto;
 
+import com.bank.banking_system.Account.AccountType;
+
 public class AccountResponse {
     private Long id;
     private String accountNumber;
-    private String accountType;
+    private AccountType accountType;
     private Double balance;
     private Boolean blocked;
     private String ownerName;
 
-    public AccountResponse(Long id, String accountNumber, String accountType,
+    public AccountResponse(Long id, String accountNumber, AccountType accountType,
                            Double balance, Boolean blocked, String ownerName) {
         this.id = id;
         this.accountNumber = accountNumber;
@@ -26,7 +28,7 @@ public class AccountResponse {
         return accountNumber;
     }
 
-    public String getAccountType() {
+    public AccountType getAccountType() {
         return accountType;
     }
 

@@ -11,6 +11,7 @@ import com.bank.banking_system.Exception.InsufficientFundsException;
 import com.bank.banking_system.Exception.ResourceNotFoundException;
 import com.bank.banking_system.Transaction.Transaction;
 import com.bank.banking_system.Transaction.TransactionRepository;
+import com.bank.banking_system.Transaction.TransactionType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,7 +41,7 @@ public class AccountService {
     }
 
     @Transactional
-    public Account createAccount(String accountType, Long customerId) {
+    public Account createAccount(AccountType accountType, Long customerId) {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
 
@@ -74,7 +75,7 @@ public class AccountService {
         checkAccountIsBlocked(account);
 
         account.setBalance(account.getBalance() + amount);
-        Transaction transaction = new Transaction("DEPOSIT", amount, null, account);
+        Transaction transaction = new Transaction(TransactionType.DEPOSIT, amount, null, account);
 
         transactionRepository.save(transaction);
         return accountRepository.save(account);
@@ -88,7 +89,7 @@ public class AccountService {
         checkAccountIsBlocked(account);
 
         account.setBalance(account.getBalance() - amount);
-        Transaction transaction = new Transaction("WITHDRAW", amount, account, null);
+        Transaction transaction = new Transaction(TransactionType.WITHDRAW, amount, account, null);
 
         transactionRepository.save(transaction);
         return accountRepository.save(account);
@@ -105,7 +106,7 @@ public class AccountService {
 
         source.setBalance(source.getBalance() - amount);
         target.setBalance(target.getBalance() + amount);
-        Transaction transaction = new Transaction("TRANSFER", amount, source, target);
+        Transaction transaction = new Transaction(TransactionType.TRANSFER, amount, source, target);
 
         transactionRepository.save(transaction);
         accountRepository.save(source);
@@ -189,6 +190,9 @@ public class AccountService {
     public void deleteAccount(Long id) {
         Account account = accountRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+        List<Transaction> transactions = transactionRepository.findBySourceAccountIdOrTargetAccountId(id, id);
+        transactionRepository.deleteAll(transactions);
         accountRepository.delete(account);
+
     }
 }

@@ -4,6 +4,7 @@ import com.bank.banking_system.Account.Account;
 import com.bank.banking_system.Account.AccountRepository;
 import com.bank.banking_system.Account.AccountService;
 import com.bank.banking_system.Account.dto.AccountResponse;
+import com.bank.banking_system.Exception.AccountHasActiveAccountsException;
 import com.bank.banking_system.Exception.DuplicatePeselException;
 import com.bank.banking_system.Exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,14 @@ public class CustomerService {
     public void deleteCustomer(Long id) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+
+        List<Account> accounts = accountRepository.findByCustomerId(id);
+
+        if (!accounts.isEmpty()) {
+            throw new AccountHasActiveAccountsException(
+                    "Customers has " + accounts.size() + " account(s). Delete first."
+            );
+        }
         customerRepository.delete(customer);
     }
 

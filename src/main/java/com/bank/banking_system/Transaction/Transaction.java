@@ -14,7 +14,7 @@ public class Transaction {
     private Long id;
 
     @Column(name = "transaction_type", nullable = false)
-    private String type;
+    private TransactionType type;
 
     private Double amount;
 
@@ -31,7 +31,7 @@ public class Transaction {
     public Transaction() {
     }
 
-    public Transaction(String type, Double amount, Account sourceAccount, Account targetAccount) {
+    public Transaction(TransactionType type, Double amount, Account sourceAccount, Account targetAccount) {
         this.type = type;
         this.amount = amount;
         this.sourceAccount = sourceAccount;
@@ -42,7 +42,7 @@ public class Transaction {
         return id;
     }
 
-    public String getType() {
+    public TransactionType getType() {
         return type;
     }
 

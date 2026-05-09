@@ -1,6 +1,7 @@
 package com.bank.banking_system;
 
 import com.bank.banking_system.Account.AccountService;
+import com.bank.banking_system.Account.dto.BankStatsResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,7 +16,7 @@ public class BankStatsController {
     }
 
     @GetMapping
-    public void bankStatsResponse() {
-        accountService.bankStatsResponse();
+    public BankStatsResponse bankStatsResponse() {
+         return accountService.bankStatsResponse();
     }
 }

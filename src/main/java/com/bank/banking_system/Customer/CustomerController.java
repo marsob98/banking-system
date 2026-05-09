@@ -34,7 +34,7 @@ public class CustomerController {
         customerService.deleteCustomer(id);
     }
 
-    @GetMapping("{id}")
+    @GetMapping("/{id}")
     public List<AccountResponse> getCustomerAccounts(@PathVariable Long id) {
         return customerService.getCustomerAccounts(id);
     }

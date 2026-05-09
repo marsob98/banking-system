@@ -37,7 +37,7 @@ public class AccountController {
     }
 
     @PostMapping
-    public AccountResponse createAccount(@RequestParam String accountType, @RequestParam Long customerId) {
+    public AccountResponse createAccount(@RequestParam AccountType accountType, @RequestParam Long customerId) {
         Account account = accountService.createAccount(accountType, customerId);
         return accountService.toResponse(account);
     }

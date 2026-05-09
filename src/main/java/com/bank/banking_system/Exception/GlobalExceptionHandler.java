@@ -54,6 +54,16 @@ public class GlobalExceptionHandler {
         ));
     }
 
+    @ExceptionHandler(AccountHasActiveAccountsException.class)
+    public ResponseEntity<Map<String, Object>> handleActiveAccounts (AccountHasActiveAccountsException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                "status", 403,
+                "error", "FORBIDDEN",
+                "message", ex.getMessage(),
+                "timestamp", LocalDateTime.now()
+        ));
+    }
+
     @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(
         org.springframework.web.bind.MethodArgumentNotValidException ex) {

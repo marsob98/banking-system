@@ -14,8 +14,9 @@ public class Account {
     @Column(name = "account_number", nullable = false, unique = true)
     private String accountNumber;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "account_type", nullable = false)
-    private String accountType;
+    private AccountType accountType;
 
     private Double balance = 0.0;
 
@@ -30,7 +31,7 @@ public class Account {
     public Account() {
     }
 
-    public Account(String accountNumber, String accountType, Customer customer) {
+    public Account(String accountNumber, AccountType accountType, Customer customer) {
         this.accountNumber = accountNumber;
         this.accountType = accountType;
         this.customer = customer;
@@ -54,11 +55,11 @@ public class Account {
         this.accountNumber = accountNumber;
     }
 
-    public String getAccountType() {
+    public AccountType getAccountType() {
         return accountType;
     }
 
-    public void setAccountType(String accountType) {
+    public void setAccountType(AccountType accountType) {
         this.accountType = accountType;
     }
 

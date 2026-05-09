@@ -1,14 +1,16 @@
 package com.bank.banking_system.Account.dto;
 
+import com.bank.banking_system.Transaction.TransactionType;
+
 public class TransactionResponse {
     private Long id;
-    private String type;
+    private TransactionType type;
     private Double amount;
     private String sourceAccount;
     private String targetAccount;
     private String timestamp;
 
-    public TransactionResponse(Long id, String type, Double amount, String sourceAccount, String targetAccount, String timestamp) {
+    public TransactionResponse(Long id, TransactionType type, Double amount, String sourceAccount, String targetAccount, String timestamp) {
         this.id = id;
         this.type = type;
         this.amount = amount;
@@ -21,7 +23,7 @@ public class TransactionResponse {
         return id;
     }
 
-    public String getType() {
+    public TransactionType getType() {
         return type;
     }
 
