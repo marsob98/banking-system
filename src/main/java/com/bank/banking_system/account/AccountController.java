@@ -1,11 +1,11 @@
-package com.bank.banking_system.Account;
+package com.bank.banking_system.account;
 
-import com.bank.banking_system.Account.dto.AccountResponse;
-import com.bank.banking_system.Account.dto.TransactionResponse;
-import com.bank.banking_system.Account.dto.TransferResponse;
-import com.bank.banking_system.Transaction.TransactionRepository;
+import com.bank.banking_system.account.dto.AccountResponse;
+import com.bank.banking_system.account.dto.TransactionResponse;
+import com.bank.banking_system.account.dto.TransferResponse;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -13,16 +13,23 @@ import java.util.List;
 public class AccountController {
 
     private final AccountService accountService;
+    private final AccountRepository accountRepository;
 
 
-    public AccountController(AccountService accountService) {
+    public AccountController(AccountService accountService, AccountRepository accountRepository) {
         this.accountService = accountService;
+        this.accountRepository = accountRepository;
     }
 
 
     @GetMapping
     public List<AccountResponse> getAllAccounts() {
         return accountService.getAllAccounts();
+    }
+
+    @GetMapping("/sum")
+    public BigDecimal getAllBalances() {
+        return accountRepository.sumAllBalances();
     }
 
     @GetMapping("/{id}/transactions")
@@ -43,13 +50,13 @@ public class AccountController {
     }
 
     @PutMapping("/{id}/deposit")
-    public AccountResponse deposit(@PathVariable Long id, @RequestParam Double amount) {
+    public AccountResponse deposit(@PathVariable Long id, @RequestParam BigDecimal amount) {
         Account account = accountService.deposit(id, amount);
         return accountService.toResponse(account);
     }
 
     @PutMapping("/{id}/withdraw")
-    public AccountResponse withdraw(@PathVariable Long id, @RequestParam Double amount) {
+    public AccountResponse withdraw(@PathVariable Long id, @RequestParam BigDecimal amount) {
         Account account = accountService.withdraw(id, amount);
         return accountService.toResponse(account);
     }
@@ -57,7 +64,7 @@ public class AccountController {
     @PutMapping("/transfer")
     public TransferResponse transfer(@RequestParam Long fromId,
                                      @RequestParam Long toId,
-                                     @RequestParam Double amount) {
+                                     @RequestParam BigDecimal amount) {
         return accountService.transfer(fromId, toId, amount);
     }
 
@@ -77,6 +84,7 @@ public class AccountController {
     public void deleteAccount(@PathVariable Long id) {
         accountService.deleteAccount(id);
     }
+
 
 
 

@@ -1,20 +1,21 @@
-package com.bank.banking_system.Account;
+package com.bank.banking_system.account;
 
-import com.bank.banking_system.Account.dto.AccountResponse;
-import com.bank.banking_system.Account.dto.BankStatsResponse;
-import com.bank.banking_system.Account.dto.TransactionResponse;
-import com.bank.banking_system.Account.dto.TransferResponse;
-import com.bank.banking_system.Customer.Customer;
-import com.bank.banking_system.Customer.CustomerRepository;
-import com.bank.banking_system.Exception.AccountBlockedException;
-import com.bank.banking_system.Exception.InsufficientFundsException;
-import com.bank.banking_system.Exception.ResourceNotFoundException;
-import com.bank.banking_system.Transaction.Transaction;
-import com.bank.banking_system.Transaction.TransactionRepository;
-import com.bank.banking_system.Transaction.TransactionType;
+import com.bank.banking_system.account.dto.AccountResponse;
+import com.bank.banking_system.account.dto.BankStatsResponse;
+import com.bank.banking_system.account.dto.TransactionResponse;
+import com.bank.banking_system.account.dto.TransferResponse;
+import com.bank.banking_system.customer.Customer;
+import com.bank.banking_system.customer.CustomerRepository;
+import com.bank.banking_system.exception.AccountBlockedException;
+import com.bank.banking_system.exception.InsufficientFundsException;
+import com.bank.banking_system.exception.ResourceNotFoundException;
+import com.bank.banking_system.transaction.Transaction;
+import com.bank.banking_system.transaction.TransactionRepository;
+import com.bank.banking_system.transaction.TransactionType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -67,14 +68,12 @@ public class AccountService {
 
 
     @Transactional
-    public Account deposit(Long accountId, Double amount) {
+    public Account deposit(Long accountId, BigDecimal amount) {
         Account account = findAccountById(accountId);
-        if (amount <= 0) {
-            throw new IllegalArgumentException("More than 0");
-        }
+        validatePositiveAmount(amount);
         checkAccountIsBlocked(account);
 
-        account.setBalance(account.getBalance() + amount);
+        account.setBalance(account.getBalance().add(amount));
         Transaction transaction = new Transaction(TransactionType.DEPOSIT, amount, null, account);
 
         transactionRepository.save(transaction);
@@ -82,30 +81,32 @@ public class AccountService {
     }
 
     @Transactional
-    public Account withdraw(Long accountId, Double amount) {
+    public Account withdraw(Long accountId, BigDecimal amount) {
         Account account = findAccountById(accountId);
 
+        validatePositiveAmount(amount);
         checkInsufficientFunds(account, amount);
         checkAccountIsBlocked(account);
 
-        account.setBalance(account.getBalance() - amount);
+        account.setBalance(account.getBalance().subtract(amount));
         Transaction transaction = new Transaction(TransactionType.WITHDRAW, amount, account, null);
-
         transactionRepository.save(transaction);
+
         return accountRepository.save(account);
     }
 
     @Transactional
-    public TransferResponse transfer(Long fromAccId, Long toAccId, Double amount) {
+    public TransferResponse transfer(Long fromAccId, Long toAccId, BigDecimal amount) {
         Account source = findAccountById(fromAccId);
         Account target = findAccountById(toAccId);
 
+        validatePositiveAmount(amount);
         checkInsufficientFunds(source, amount);
         checkAccountIsBlocked(source);
         checkAccountIsBlocked(target);
 
-        source.setBalance(source.getBalance() - amount);
-        target.setBalance(target.getBalance() + amount);
+        source.setBalance(source.getBalance().subtract(amount));
+        target.setBalance(target.getBalance().add(amount));
         Transaction transaction = new Transaction(TransactionType.TRANSFER, amount, source, target);
 
         transactionRepository.save(transaction);
@@ -124,6 +125,7 @@ public class AccountService {
     public Account blockAccount(Long accountId) {
         Account account = findAccountById(accountId);
         account.setIsBlocked(true);
+
         return accountRepository.save(account);
     }
 
@@ -131,6 +133,7 @@ public class AccountService {
     public Account unBlockAccount(Long accountId) {
         Account account = findAccountById(accountId);
         account.setIsBlocked(false);
+
         return accountRepository.save(account);
     }
 
@@ -157,7 +160,7 @@ public class AccountService {
                 transaction.getAmount(),
                 source,
                 target,
-                transaction.getTimestamp().toString());
+                transaction.getTimestamp());
     }
 
     private void checkAccountIsBlocked(Account account) {
@@ -166,8 +169,14 @@ public class AccountService {
         }
     }
 
-    private void checkInsufficientFunds(Account account, Double amount) {
-        if (account.getBalance() - amount < 0) {
+    private void validatePositiveAmount(BigDecimal amount) {
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("More than 0");
+        }
+    }
+
+    private void checkInsufficientFunds(Account account, BigDecimal amount) {
+        if (account.getBalance().compareTo(amount) < 0) {
             throw new InsufficientFundsException("Insufficient funds");
         }
     }
@@ -178,12 +187,15 @@ public class AccountService {
     }
 
     public BankStatsResponse bankStatsResponse() {
+        BigDecimal totalBalance = accountRepository.findAll().stream()
+                .map(Account::getBalance)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         return new BankStatsResponse(
                 customerRepository.count(),
                 accountRepository.count(),
                 transactionRepository.count(),
-                accountRepository.findAll()
-                        .stream().mapToDouble(Account::getBalance).sum());
+                totalBalance);
     }
 
     @Transactional
@@ -191,6 +203,7 @@ public class AccountService {
         Account account = accountRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
         List<Transaction> transactions = transactionRepository.findBySourceAccountIdOrTargetAccountId(id, id);
+
         transactionRepository.deleteAll(transactions);
         accountRepository.delete(account);
 

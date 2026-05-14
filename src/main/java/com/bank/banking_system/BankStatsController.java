@@ -1,7 +1,7 @@
 package com.bank.banking_system;
 
-import com.bank.banking_system.Account.AccountService;
-import com.bank.banking_system.Account.dto.BankStatsResponse;
+import com.bank.banking_system.account.AccountService;
+import com.bank.banking_system.account.dto.BankStatsResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

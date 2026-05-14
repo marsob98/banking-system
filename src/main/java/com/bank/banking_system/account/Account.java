@@ -1,6 +1,7 @@
-package com.bank.banking_system.Account;
+package com.bank.banking_system.account;
 
-import com.bank.banking_system.Customer.Customer;
+import com.bank.banking_system.customer.Customer;
+import java.math.BigDecimal;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -26,7 +27,8 @@ public class Account {
     @Column(name = "account_type", nullable = false)
     private AccountType accountType;
 
-    private Double balance = 0.0;
+    @Column(precision = 19, scale = 2)
+    private BigDecimal balance = BigDecimal.ZERO;
 
     @Column(name = "is_blocked")
     private Boolean isBlocked = false;

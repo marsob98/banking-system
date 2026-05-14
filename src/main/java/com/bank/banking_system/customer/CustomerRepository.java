@@ -1,4 +1,4 @@
-package com.bank.banking_system.Customer;
+package com.bank.banking_system.customer;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;

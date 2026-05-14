@@ -1,12 +1,12 @@
-package com.bank.banking_system.Customer;
+package com.bank.banking_system.customer;
 
-import com.bank.banking_system.Account.Account;
-import com.bank.banking_system.Account.AccountRepository;
-import com.bank.banking_system.Account.AccountService;
-import com.bank.banking_system.Account.dto.AccountResponse;
-import com.bank.banking_system.Exception.AccountHasActiveAccountsException;
-import com.bank.banking_system.Exception.DuplicatePeselException;
-import com.bank.banking_system.Exception.ResourceNotFoundException;
+import com.bank.banking_system.account.Account;
+import com.bank.banking_system.account.AccountRepository;
+import com.bank.banking_system.account.AccountService;
+import com.bank.banking_system.account.dto.AccountResponse;
+import com.bank.banking_system.exception.AccountHasActiveAccountsException;
+import com.bank.banking_system.exception.DuplicatePeselException;
+import com.bank.banking_system.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

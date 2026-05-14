@@ -1,13 +1,12 @@
-package com.bank.banking_system.Transaction;
+package com.bank.banking_system.transaction;
 
-import com.bank.banking_system.Account.AccountService;
-import com.bank.banking_system.Account.dto.TransactionResponse;
+import com.bank.banking_system.account.AccountService;
+import com.bank.banking_system.account.dto.TransactionResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 @RestController

@@ -1,4 +1,4 @@
-package com.bank.banking_system.Customer;
+package com.bank.banking_system.customer;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;

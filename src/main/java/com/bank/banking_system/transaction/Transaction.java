@@ -1,11 +1,12 @@
-package com.bank.banking_system.Transaction;
+package com.bank.banking_system.transaction;
 
-import com.bank.banking_system.Account.Account;
+import com.bank.banking_system.account.Account;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -22,7 +23,8 @@ public class Transaction {
     @Column(name = "transaction_type", nullable = false)
     private TransactionType type;
 
-    private Double amount;
+    @Column(precision = 19, scale = 2)
+    private BigDecimal amount;
 
     @ManyToOne
     @JoinColumn(name = "source_account_id")
@@ -34,7 +36,7 @@ public class Transaction {
 
     private LocalDateTime timestamp = LocalDateTime.now();
 
-    public Transaction(TransactionType type, Double amount, Account sourceAccount, Account targetAccount) {
+    public Transaction(TransactionType type, BigDecimal amount, Account sourceAccount, Account targetAccount) {
         this.type = type;
         this.amount = amount;
         this.sourceAccount = sourceAccount;

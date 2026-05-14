@@ -1,6 +1,6 @@
-package com.bank.banking_system.Customer;
+package com.bank.banking_system.customer;
 
-import com.bank.banking_system.Account.dto.AccountResponse;
+import com.bank.banking_system.account.dto.AccountResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
