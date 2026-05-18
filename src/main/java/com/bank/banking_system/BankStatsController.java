@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
+
 @RestController
 @RequestMapping("/api/stats")
 public class BankStatsController {
@@ -19,4 +21,11 @@ public class BankStatsController {
     public BankStatsResponse bankStatsResponse() {
          return accountService.bankStatsResponse();
     }
+
+    @GetMapping("/sum")
+    public BigDecimal getAllBalances() {
+        return accountService.sumAllBalances();
+    }
+
+
 }

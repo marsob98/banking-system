@@ -208,4 +208,8 @@ public class AccountService {
         accountRepository.delete(account);
 
     }
+    @Transactional
+    public BigDecimal sumAllBalances() {
+       return accountRepository.sumAllBalances();
+    }
 }

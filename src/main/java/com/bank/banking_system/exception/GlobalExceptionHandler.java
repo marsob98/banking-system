@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccountBlockedException.class)
     public ResponseEntity<Map<String, Object>> handleAccountBlocked(AccountBlockedException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
                 "status", 403,
                 "error", "Account blocked",
                 "message", ex.getMessage(),

@@ -13,12 +13,10 @@ import java.util.List;
 public class AccountController {
 
     private final AccountService accountService;
-    private final AccountRepository accountRepository;
 
 
-    public AccountController(AccountService accountService, AccountRepository accountRepository) {
+    public AccountController(AccountService accountService) {
         this.accountService = accountService;
-        this.accountRepository = accountRepository;
     }
 
 
@@ -27,10 +25,6 @@ public class AccountController {
         return accountService.getAllAccounts();
     }
 
-    @GetMapping("/sum")
-    public BigDecimal getAllBalances() {
-        return accountRepository.sumAllBalances();
-    }
 
     @GetMapping("/{id}/transactions")
     public List<TransactionResponse> getAllTransactionsForAcc(@PathVariable Long id) {

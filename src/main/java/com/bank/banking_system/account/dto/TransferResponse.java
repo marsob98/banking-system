@@ -7,7 +7,7 @@ public record TransferResponse(
         String message,
         BigDecimal amount,
         String fromAccount,
-        String toAccount1
+        String toAccount
 ) {
 
 }
