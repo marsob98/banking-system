@@ -53,7 +53,8 @@ public class CustomerService {
     @Transactional
     public List<AccountResponse> getCustomerAccounts(Long id) {
         return accountRepository.findByCustomerId(id).stream()
-                .map(accountService::toResponse).toList();
+                .map(accountService::toResponse)
+                .toList();
     }
 
 }

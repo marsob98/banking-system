@@ -42,6 +42,16 @@ public class GlobalExceptionHandler {
         ));
     }
 
+    @ExceptionHandler(NegativeBalanceException.class)
+    public ResponseEntity<Map<String, Object>> handleNegativeBalance(NegativeBalanceException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                "status", 403,
+                "error", "More than 0!",
+                "message", ex.getMessage(),
+                "timestamp", LocalDateTime.now()
+        ));
+    }
+
 
     @ExceptionHandler(InsufficientFundsException.class)
     public ResponseEntity<Map<String, Object>> handleInsufficientFunds(InsufficientFundsException ex) {
@@ -57,7 +67,17 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleActiveAccounts (AccountHasActiveAccountsException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
                 "status", 409,
-                "error", "CONFLICT",
+                "error", "Conflict",
+                "message", ex.getMessage(),
+                "timestamp", LocalDateTime.now()
+        ));
+    }
+
+    @ExceptionHandler(SameAccountTransferException.class)
+    public ResponseEntity<Map<String, Object>> handleSameAccount (SameAccountTransferException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                "status", 400,
+                "error", "Bad request",
                 "message", ex.getMessage(),
                 "timestamp", LocalDateTime.now()
         ));

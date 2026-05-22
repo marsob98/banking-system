@@ -6,9 +6,7 @@ import com.bank.banking_system.account.dto.TransactionResponse;
 import com.bank.banking_system.account.dto.TransferResponse;
 import com.bank.banking_system.customer.Customer;
 import com.bank.banking_system.customer.CustomerRepository;
-import com.bank.banking_system.exception.AccountBlockedException;
-import com.bank.banking_system.exception.InsufficientFundsException;
-import com.bank.banking_system.exception.ResourceNotFoundException;
+import com.bank.banking_system.exception.*;
 import com.bank.banking_system.transaction.Transaction;
 import com.bank.banking_system.transaction.TransactionRepository;
 import com.bank.banking_system.transaction.TransactionType;
@@ -85,8 +83,8 @@ public class AccountService {
         Account account = findAccountById(accountId);
 
         validatePositiveAmount(amount);
-        checkInsufficientFunds(account, amount);
         checkAccountIsBlocked(account);
+        checkInsufficientFunds(account, amount);
 
         account.setBalance(account.getBalance().subtract(amount));
         Transaction transaction = new Transaction(TransactionType.WITHDRAW, amount, account, null);
@@ -97,6 +95,10 @@ public class AccountService {
 
     @Transactional
     public TransferResponse transfer(Long fromAccId, Long toAccId, BigDecimal amount) {
+        if (fromAccId.equals(toAccId)) {
+            throw new SameAccountTransferException("Cannot transfer to the same account");
+        }
+
         Account source = findAccountById(fromAccId);
         Account target = findAccountById(toAccId);
 
@@ -171,7 +173,7 @@ public class AccountService {
 
     private void validatePositiveAmount(BigDecimal amount) {
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("More than 0");
+            throw new NegativeBalanceException("More than 0!");
         }
     }
 

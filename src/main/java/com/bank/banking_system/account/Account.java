@@ -1,12 +1,13 @@
 package com.bank.banking_system.account;
 
 import com.bank.banking_system.customer.Customer;
-import java.math.BigDecimal;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "accounts")
