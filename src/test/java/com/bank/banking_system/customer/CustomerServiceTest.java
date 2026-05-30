@@ -44,11 +44,10 @@ class CustomerServiceTest {
 
     @Test
     void createCustomer_shouldThrow_whenPeselAlreadyInDataBase() {
-        Customer customer = new Customer();
-        customer.setPesel("12345678901");
+        Customer customer = new Customer(1L, "Jan", "Kowalski", "12345678901");
         when(customerRepository.findByPesel(customer.getPesel())).thenReturn(Optional.of(customer));
 
-        assertThatThrownBy(() -> customerService.createCustomer(new Customer(1L, "Jan", "Kowalski", "12345678901")))
+        assertThatThrownBy(() -> customerService.createCustomer(customer))
                 .isInstanceOf(DuplicatePeselException.class);
     }
 
@@ -56,10 +55,8 @@ class CustomerServiceTest {
     void deleteCustomer_shouldThrow_whenCustomerHasAccounts() {
         Customer customer = new Customer(1L, "Jan", "Kowalski", "77777777777");
         Account account = new Account("PL123", AccountType.CHECKING, customer);
-        List<Account> result = accountRepository.findByCustomerId(1L);
-        result.add(account);
         when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
-        when(accountRepository.findByCustomerId(1L)).thenReturn(result);
+        when(accountRepository.findByCustomerId(1L)).thenReturn(List.of(account));
 
         assertThatThrownBy(() -> customerService.deleteCustomer(1L))
                 .isInstanceOf(AccountHasActiveAccountsException.class);
@@ -84,7 +81,8 @@ class CustomerServiceTest {
                 .thenReturn(fakeResponse);
 
         List<AccountResponse> result = customerService.getCustomerAccounts(1L);
-        assertThat(result.get(0).id().equals(1L));
+
+        assertThat(result.get(0).id()).isEqualTo(1L);
 
     }
 

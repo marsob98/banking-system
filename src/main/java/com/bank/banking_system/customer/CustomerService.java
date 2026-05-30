@@ -57,4 +57,9 @@ public class CustomerService {
                 .toList();
     }
 
+    @Transactional
+    public List<Customer> getAllCustomers() {
+        return customerRepository.findAll();
+    }
+
 }
