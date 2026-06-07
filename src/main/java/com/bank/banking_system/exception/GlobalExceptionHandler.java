@@ -32,6 +32,17 @@ public class GlobalExceptionHandler {
         ));
     }
 
+    @ExceptionHandler(org.springframework.security.authentication.BadCredentialsException.class)
+    public ResponseEntity<Map<String, Object>> handleBadCredentials(
+            org.springframework.security.authentication.BadCredentialsException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                "status", 401,
+                "error", "Unauthorized",
+                "message", "Invalid username or password",
+                "timestamp", LocalDateTime.now()
+        ));
+    }
+
     @ExceptionHandler(AccountBlockedException.class)
     public ResponseEntity<Map<String, Object>> handleAccountBlocked(AccountBlockedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(

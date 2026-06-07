@@ -3,6 +3,7 @@ package com.bank.banking_system.account;
 import com.bank.banking_system.account.dto.AccountResponse;
 import com.bank.banking_system.account.dto.TransactionResponse;
 import com.bank.banking_system.account.dto.TransferResponse;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -62,12 +63,14 @@ public class AccountController {
         return accountService.transfer(fromId, toId, amount);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}/block")
     public AccountResponse blockAccount(@PathVariable Long id) {
         Account account = accountService.blockAccount(id);
         return accountService.toResponse(account);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}/unblock")
     public AccountResponse unblockAccount(@PathVariable Long id) {
         Account account = accountService.unBlockAccount(id);
