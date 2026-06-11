@@ -1,5 +1,8 @@
 package com.bank.banking_system.user;
 
+import com.bank.banking_system.customer.Customer;
+import com.bank.banking_system.customer.CustomerRepository;
+import com.bank.banking_system.exception.DuplicatePeselException;
 import com.bank.banking_system.exception.DuplicateUsernameException;
 import com.bank.banking_system.security.JwtService;
 import com.bank.banking_system.user.dto.AuthResponse;
@@ -18,26 +21,38 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final CustomerRepository customerRepository;
 
     public AuthService(PasswordEncoder passwordEncoder, UserRepository userRepository,
-                       JwtService jwtService, AuthenticationManager authenticationManager) {
+                       JwtService jwtService, AuthenticationManager authenticationManager,
+                       CustomerRepository customerRepository) {
         this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
+        this.customerRepository = customerRepository;
     }
 
     @Transactional
     public User register(RegisterRequest request) {
         userRepository.findByUsername(request.username())
                 .ifPresent(existing -> {
-                    throw new DuplicateUsernameException("Username already taken");
-                });
+                    throw new DuplicateUsernameException("Username already taken");});
+        customerRepository.findByPesel(request.pesel())
+                .ifPresent(e -> {throw new DuplicatePeselException("Pesel already exists");});
+
+
+        Customer customer = new Customer();
+        customer.setFirstName(request.firstName());
+        customer.setLastName(request.lastName());
+        customer.setPesel(request.pesel());
+        Customer savedCustomer = customerRepository.save(customer);
 
         User user = new User();
         user.setUsername(request.username());
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setRole(Role.USER);
+        user.setCustomer(savedCustomer);
 
         return userRepository.save(user);
     }

@@ -4,6 +4,8 @@ import com.bank.banking_system.account.dto.AccountResponse;
 import com.bank.banking_system.account.dto.TransactionResponse;
 import com.bank.banking_system.account.dto.TransferResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -36,6 +38,11 @@ public class AccountController {
     public AccountResponse findAccountByNumber(@PathVariable String accountNumber) {
         Account accountByNumber = accountService.findAccountByNumber(accountNumber);
         return accountService.toResponse(accountByNumber);
+    }
+
+    @GetMapping("/my")
+    public List<AccountResponse> getMyAccounts(@AuthenticationPrincipal UserDetails userDetails) {
+        return accountService.getAccountsForUser(userDetails.getUsername());
     }
 
     @PostMapping
@@ -77,6 +84,7 @@ public class AccountController {
         return accountService.toResponse(account);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping({"/{id}"})
     public void deleteAccount(@PathVariable Long id) {
         accountService.deleteAccount(id);

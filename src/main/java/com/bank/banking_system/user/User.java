@@ -1,5 +1,6 @@
 package com.bank.banking_system.user;
 
+import com.bank.banking_system.customer.Customer;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -32,4 +33,8 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+
+    @OneToOne
+    @JoinColumn(name = "customer_id")
+    private Customer customer;
 }

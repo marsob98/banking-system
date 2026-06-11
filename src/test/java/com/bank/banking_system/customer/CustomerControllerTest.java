@@ -15,7 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(CustomerController.class)
-public class CustomerControllerTest {
+class CustomerControllerTest {
 
     @MockitoBean
     private CustomerService customerService;

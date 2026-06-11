@@ -1,5 +1,6 @@
 package com.bank.banking_system.security;
 
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,4 +34,21 @@ public class JwtService {
                 .compact();
     }
 
+    public String extractUsername(String token) {
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getSubject();
+    }
+
+    public boolean isTokenValid(String token) {
+        try {
+            Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
+            return true;
+        } catch (JwtException e) {
+            return false;
+        }
+    }
 }

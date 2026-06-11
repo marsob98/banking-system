@@ -10,6 +10,8 @@ import com.bank.banking_system.exception.*;
 import com.bank.banking_system.transaction.Transaction;
 import com.bank.banking_system.transaction.TransactionRepository;
 import com.bank.banking_system.transaction.TransactionType;
+import com.bank.banking_system.user.User;
+import com.bank.banking_system.user.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,20 +23,39 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final CustomerRepository customerRepository;
     private final TransactionRepository transactionRepository;
+    private final UserRepository userRepository;
 
 
     public AccountService(AccountRepository accountRepository,
                           CustomerRepository customerRepository,
-                          TransactionRepository transactionRepository) {
+                          TransactionRepository transactionRepository,
+                          UserRepository userRepository) {
         this.accountRepository = accountRepository;
         this.customerRepository = customerRepository;
         this.transactionRepository = transactionRepository;
+        this.userRepository = userRepository;
     }
 
 
     @Transactional
     public List<AccountResponse> getAllAccounts() {
         return accountRepository.findAll().stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional
+    public List<AccountResponse> getAccountsForUser(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Customer customer = user.getCustomer();
+
+        if (customer == null) {
+            throw new ResourceNotFoundException("No customer linked to this user");
+        }
+
+        return accountRepository.findByCustomerId(customer.getId()).stream()
                 .map(this::toResponse)
                 .toList();
     }
