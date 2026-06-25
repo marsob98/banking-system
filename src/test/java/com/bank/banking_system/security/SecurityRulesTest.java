@@ -8,16 +8,16 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AccountController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtAccessDeniedHandler.class, JwtAuthEntryPoint.class})
 class SecurityRulesTest {
 
     @Autowired
@@ -32,14 +32,6 @@ class SecurityRulesTest {
     @MockitoBean
     private JwtService jwtService;
 
-    @MockitoBean
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
-
-    @MockitoBean
-    private JwtAccessDeniedHandler jwtAccessDeniedHandler;
-
-    @MockitoBean
-    private JwtAuthEntryPoint jwtAuthEntryPoint;
 
     @Test
     void protectedEndpoint_shouldReturn401_whenNoAuth() throws Exception {
@@ -48,23 +40,20 @@ class SecurityRulesTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
     void protectedEndpoint_shouldReturn200_whenAuthenticated() throws Exception {
-        mockMvc.perform(get("/api/accounts"))
+        mockMvc.perform(get("/api/accounts").with(user("user").roles("USER")))
                 .andExpect(status().isOk());
     }
 
     @Test
-    @WithMockUser(roles = "USER")
     void deleteEndpoint_shouldReturn403_whenUserNotAdmin() throws Exception {
-        mockMvc.perform(delete("/api/accounts/1"))
+        mockMvc.perform(delete("/api/accounts/1").with(user("user").roles("USER")))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
     void deleteEndpoint_shouldReturn200_whenAdmin() throws Exception {
-        mockMvc.perform(delete("/api/accounts/1"))
+        mockMvc.perform(delete("/api/accounts/1").with(user("user").roles("ADMIN")))
                 .andExpect(status().isOk());
     }
 }

@@ -30,8 +30,9 @@ public class AccountController {
 
 
     @GetMapping("/{id}/transactions")
-    public List<TransactionResponse> getAllTransactionsForAcc(@PathVariable Long id) {
-        return accountService.getAllTransactionsForAcc(id);
+    public List<TransactionResponse> getAllTransactionsForAcc(@PathVariable Long id,
+                                                              @AuthenticationPrincipal UserDetails userDetails) {
+        return accountService.getAllTransactionsForAcc(id, userDetails.getUsername());
     }
 
     @GetMapping("/number/{accountNumber}")
@@ -58,16 +59,19 @@ public class AccountController {
     }
 
     @PutMapping("/{id}/withdraw")
-    public AccountResponse withdraw(@PathVariable Long id, @RequestParam BigDecimal amount) {
-        Account account = accountService.withdraw(id, amount);
+    public AccountResponse withdraw(@PathVariable Long id,
+                                    @RequestParam BigDecimal amount,
+                                    @AuthenticationPrincipal UserDetails userDetails) {
+        Account account = accountService.withdraw(id, amount, userDetails.getUsername());
         return accountService.toResponse(account);
     }
 
     @PutMapping("/transfer")
     public TransferResponse transfer(@RequestParam Long fromId,
                                      @RequestParam Long toId,
-                                     @RequestParam BigDecimal amount) {
-        return accountService.transfer(fromId, toId, amount);
+                                     @RequestParam BigDecimal amount,
+                                     @AuthenticationPrincipal UserDetails userDetails) {
+        return accountService.transfer(fromId, toId, amount, userDetails.getUsername());
     }
 
     @PreAuthorize("hasRole('ADMIN')")

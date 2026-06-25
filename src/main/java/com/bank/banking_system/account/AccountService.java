@@ -45,18 +45,11 @@ public class AccountService {
     }
 
     @Transactional
-    public List<AccountResponse> getAccountsForUser(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        Customer customer = user.getCustomer();
-
-        if (customer == null) {
-            throw new ResourceNotFoundException("No customer linked to this user");
-        }
-
-        return accountRepository.findByCustomerId(customer.getId()).stream()
-                .map(this::toResponse)
+    public List<TransactionResponse> getAllTransactionsForAcc(Long id, String username) {
+        Account account = findAccountById(id);
+        checkOwnership(account, username);
+        return transactionRepository.findBySourceAccountIdOrTargetAccountId(id, id).stream()
+                .map(this::toTransactionResponse)
                 .toList();
     }
 
@@ -69,13 +62,6 @@ public class AccountService {
 
         Account account = new Account(accountNumber, accountType, customer);
         return accountRepository.save(account);
-    }
-
-    @Transactional
-    public List<TransactionResponse> getAllTransactionsForAcc(Long id) {
-        return transactionRepository.findBySourceAccountIdOrTargetAccountId(id, id).stream()
-                .map(this::toTransactionResponse)
-                .toList();
     }
 
     @Transactional
@@ -100,9 +86,9 @@ public class AccountService {
     }
 
     @Transactional
-    public Account withdraw(Long accountId, BigDecimal amount) {
+    public Account withdraw(Long accountId, BigDecimal amount, String username) {
         Account account = findAccountById(accountId);
-
+        checkOwnership(account, username);
         validatePositiveAmount(amount);
         checkAccountIsBlocked(account);
         checkInsufficientFunds(account, amount);
@@ -115,14 +101,14 @@ public class AccountService {
     }
 
     @Transactional
-    public TransferResponse transfer(Long fromAccId, Long toAccId, BigDecimal amount) {
+    public TransferResponse transfer(Long fromAccId, Long toAccId, BigDecimal amount, String username) {
         if (fromAccId.equals(toAccId)) {
             throw new SameAccountTransferException("Cannot transfer to the same account");
         }
 
         Account source = findAccountById(fromAccId);
         Account target = findAccountById(toAccId);
-
+        checkOwnership(source, username);
         validatePositiveAmount(amount);
         checkInsufficientFunds(source, amount);
         checkAccountIsBlocked(source);
@@ -142,6 +128,31 @@ public class AccountService {
                 source.getAccountNumber(),
                 target.getAccountNumber()
         );
+    }
+
+    @Transactional
+    public List<AccountResponse> getAccountsForUser(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Customer customer = user.getCustomer();
+
+        if (customer == null) {
+            throw new ResourceNotFoundException("No customer linked to this user");
+        }
+
+        return accountRepository.findByCustomerId(customer.getId()).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    private void checkOwnership(Account account, String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!user.getCustomer().getId().equals(account.getCustomer().getId())) {
+            throw new SomeoneElseAccountException("Not your account");
+        }
     }
 
     @Transactional
@@ -235,4 +246,6 @@ public class AccountService {
     public BigDecimal sumAllBalances() {
        return accountRepository.sumAllBalances();
     }
+
+
 }

@@ -1,13 +1,20 @@
 package com.bank.banking_system.account;
 
+import com.bank.banking_system.SecurityConfig;
 import com.bank.banking_system.account.dto.AccountResponse;
 import com.bank.banking_system.account.dto.TransactionResponse;
 import com.bank.banking_system.customer.Customer;
 import com.bank.banking_system.exception.ResourceNotFoundException;
+import com.bank.banking_system.security.JwtService;
 import com.bank.banking_system.transaction.TransactionType;
+import com.bank.banking_system.user.CustomUserDetailsService;
+import com.bank.banking_system.user.Role;
+import com.bank.banking_system.user.User;
+import com.bank.banking_system.user.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -17,19 +24,33 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 @WebMvcTest(AccountController.class)
+@Import(SecurityConfig.class)
 class AccountControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
+    private UserRepository userRepository;
+
+    @MockitoBean
     private AccountService accountService;
+
+    @MockitoBean
+    private AccountRepository accountRepository;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
+
+    @MockitoBean
+    private JwtService jwtService;
 
     @Test
     void createAccount_shouldReturnCreatedAccount() throws Exception {
@@ -65,16 +86,20 @@ class AccountControllerTest {
 
     @Test
     void getAllTransactionsForAcc_shouldReturnTransactionList() throws Exception {
+        Customer customer = new Customer(1L, "Janusz", "Nowak", "55555555555");
+        User user = new User(1L, "Nowak", "123456", Role.USER, customer);
+        Account account = new Account("PL123", AccountType.CHECKING, customer);
         TransactionResponse response = new TransactionResponse(
                 1L, TransactionType.DEPOSIT, new BigDecimal("100.00"),
                 null, "PL123", LocalDateTime.now());
 
-        when(accountService.getAllTransactionsForAcc(1L)).thenReturn(List.of(response));
+        when(accountService.getAllTransactionsForAcc(1L, "Nowak")).thenReturn(List.of(response));
 
-        mockMvc.perform(get("/api/accounts/1/transactions"))
+        mockMvc.perform(get("/api/accounts/1/transactions").with(user("Nowak").roles("USER")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].amount").value(100.00))
-                .andExpect(jsonPath("$[0].targetAccount").value("PL123"));
+                .andExpect(jsonPath("$[0].targetAccount").value("PL123"))
+                .andExpect(jsonPath("$[0].username").value("Nowak"));
     }
 
     @Test
