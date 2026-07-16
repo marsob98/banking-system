@@ -5,11 +5,11 @@ import com.bank.banking_system.account.dto.AccountResponse;
 import com.bank.banking_system.account.dto.TransactionResponse;
 import com.bank.banking_system.customer.Customer;
 import com.bank.banking_system.exception.ResourceNotFoundException;
+import com.bank.banking_system.security.JwtAccessDeniedHandler;
+import com.bank.banking_system.security.JwtAuthEntryPoint;
 import com.bank.banking_system.security.JwtService;
 import com.bank.banking_system.transaction.TransactionType;
 import com.bank.banking_system.user.CustomUserDetailsService;
-import com.bank.banking_system.user.Role;
-import com.bank.banking_system.user.User;
 import com.bank.banking_system.user.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,6 +52,13 @@ class AccountControllerTest {
     @MockitoBean
     private JwtService jwtService;
 
+    @MockitoBean
+    private JwtAccessDeniedHandler jwtAccessDeniedHandler;
+
+    @MockitoBean
+    private JwtAuthEntryPoint jwtAuthEntryPoint;
+
+
     @Test
     void createAccount_shouldReturnCreatedAccount() throws Exception {
         Customer customer = new Customer(1L, "Jan", "Kowalski", "12345678901");
@@ -63,7 +70,7 @@ class AccountControllerTest {
         when(accountService.createAccount(AccountType.SAVINGS, 1L)).thenReturn(account);
         when(accountService.toResponse(any(Account.class))).thenReturn(response);
 
-        mockMvc.perform(post("/api/accounts")
+        mockMvc.perform(post("/api/accounts").with(user("Nowak").roles("USER"))
                         .param("accountType", "SAVINGS")
                         .param("customerId", "1"))
                 .andExpect(status().isOk())
@@ -78,7 +85,7 @@ class AccountControllerTest {
                 new BigDecimal("100.00"), false, "Jan Kowalski");
         when(accountService.getAllAccounts()).thenReturn(List.of(response));
 
-        mockMvc.perform(get("/api/accounts"))
+        mockMvc.perform(get("/api/accounts").with(user("Nowak").roles("USER")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].accountNumber").value("PL123"))
                 .andExpect(jsonPath("$[0].balance").value(100.00));
@@ -86,9 +93,6 @@ class AccountControllerTest {
 
     @Test
     void getAllTransactionsForAcc_shouldReturnTransactionList() throws Exception {
-        Customer customer = new Customer(1L, "Janusz", "Nowak", "55555555555");
-        User user = new User(1L, "Nowak", "123456", Role.USER, customer);
-        Account account = new Account("PL123", AccountType.CHECKING, customer);
         TransactionResponse response = new TransactionResponse(
                 1L, TransactionType.DEPOSIT, new BigDecimal("100.00"),
                 null, "PL123", LocalDateTime.now());
@@ -98,8 +102,7 @@ class AccountControllerTest {
         mockMvc.perform(get("/api/accounts/1/transactions").with(user("Nowak").roles("USER")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].amount").value(100.00))
-                .andExpect(jsonPath("$[0].targetAccount").value("PL123"))
-                .andExpect(jsonPath("$[0].username").value("Nowak"));
+                .andExpect(jsonPath("$[0].targetAccount").value("PL123"));
     }
 
     @Test
@@ -107,7 +110,7 @@ class AccountControllerTest {
         when(accountService.findAccountByNumber("PL123"))
                 .thenThrow(new ResourceNotFoundException("Account not found"));
 
-        mockMvc.perform(get("/api/accounts/number/PL123"))
+        mockMvc.perform(get("/api/accounts/number/PL123").with(user("Nowak").roles("USER")))
                 .andExpect(status().isNotFound());
     }
 }

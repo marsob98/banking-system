@@ -10,6 +10,7 @@ import com.bank.banking_system.transaction.TransactionType;
 import com.bank.banking_system.user.Role;
 import com.bank.banking_system.user.User;
 import com.bank.banking_system.user.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -42,13 +43,24 @@ class AccountServiceTest {
     @InjectMocks
     private AccountService accountService;
 
+    private Customer customer;
+    private User user;
+    private Account sourceAccount;
+    private Account targetAccount;
+
+    @BeforeEach
+    void setUp() {
+        customer = new Customer(1L, "Jan", "Kowalski", "77777777777");
+        user = new User(1L, "Kowal", "123456", Role.USER, customer);
+        sourceAccount = new Account("PL123", AccountType.CHECKING, customer);
+        targetAccount = new Account("PL124", AccountType.CHECKING, new Customer());
+    }
 
     @Test
     void deposit_shouldIncreaseBalance_whenAmountIsValid() {
-        Account account = new Account("PL123", AccountType.CHECKING, new Customer());
-        account.setBalance(new BigDecimal("100.00"));
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
-        when(accountRepository.save(account)).thenReturn(account);
+        sourceAccount.setBalance(new BigDecimal("100.00"));
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
+        when(accountRepository.save(sourceAccount)).thenReturn(sourceAccount);
 
         Account result = accountService.deposit(1L, new BigDecimal("50.00"));
 
@@ -57,9 +69,8 @@ class AccountServiceTest {
 
     @Test
     void deposit_shouldThrow_whenAccountBlocked() {
-        Account account = new Account("PL123", AccountType.CHECKING, new Customer());
-        account.setIsBlocked(true);
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
+        sourceAccount.setIsBlocked(true);
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
 
         assertThatThrownBy(() -> accountService.deposit(1L, new BigDecimal("100.00")))
                 .isInstanceOf(AccountBlockedException.class);
@@ -68,8 +79,7 @@ class AccountServiceTest {
 
     @Test
     void deposit_shouldThrow_whenAmountIsNegative() {
-        Account account = new Account("PL123", AccountType.CHECKING, new Customer());
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
 
         assertThatThrownBy(() -> accountService.deposit(1L, new BigDecimal("-1.00")))
                 .isInstanceOf(NegativeBalanceException.class);
@@ -77,12 +87,9 @@ class AccountServiceTest {
 
     @Test
     void withdraw_shouldDecreaseBalance_whenValidAmount() {
-        Customer customer = new Customer(1L, "Jan", "Kowalski", "77777777777");
-        User user = new User(1L, "Kowal", "123456", Role.USER, customer);
-        Account account = new Account("PL123", AccountType.CHECKING, customer);
-        account.setBalance(new BigDecimal("150.00"));
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
-        when(accountRepository.save(account)).thenReturn(account);
+        sourceAccount.setBalance(new BigDecimal("150.00"));
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
+        when(accountRepository.save(sourceAccount)).thenReturn(sourceAccount);
         when(userRepository.findByUsername("Kowal")).thenReturn(Optional.of(user));
 
         Account result = accountService.withdraw(1L, new BigDecimal("50.00"), user.getUsername());
@@ -92,11 +99,8 @@ class AccountServiceTest {
 
     @Test
     void withdraw_shouldThrow_whenAccountBlocked() {
-        Customer customer = new Customer(1L, "Jan", "Kowalski", "77777777777");
-        User user = new User(1L, "Kowal", "123456", Role.USER, customer);
-        Account account = new Account("PL123", AccountType.CHECKING, customer);
-        account.setIsBlocked(true);
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
+        sourceAccount.setIsBlocked(true);
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
         when(userRepository.findByUsername("Kowal")).thenReturn(Optional.of(user));
 
         assertThatThrownBy(() -> accountService.withdraw(1L, new BigDecimal("100.00"), user.getUsername()))
@@ -106,11 +110,8 @@ class AccountServiceTest {
 
     @Test
     void withdraw_shouldThrow_whenInsufficientFunds() {
-        Customer customer = new Customer(1L, "Jan", "Kowalski", "77777777777");
-        User user = new User(1L, "Kowal", "123456", Role.USER, customer);
-        Account account = new Account("PL123", AccountType.CHECKING, customer);
-        account.setBalance(new BigDecimal("100.00"));
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
+        sourceAccount.setBalance(new BigDecimal("100.00"));
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
         when(userRepository.findByUsername("Kowal")).thenReturn(Optional.of(user));
 
         assertThatThrownBy(() -> accountService.withdraw(1L, new BigDecimal("150.00"), user.getUsername()))
@@ -119,12 +120,9 @@ class AccountServiceTest {
 
     @Test
     void withdraw_shouldThrow_whenSomeoneElseAcc() {
-        Customer customer1 = new Customer(1L, "Jan", "Kowalski", "77777777777");
         Customer customer2 = new Customer(2L, "Janusz", "Nowak", "55555555555");
-//        User user1 = new User(1L, "Kowal", "123456", Role.USER, customer1);
         User user2 = new User(2L, "Nowak", "123456", Role.USER, customer2);
-        Account account = new Account("PL123", AccountType.CHECKING, customer1);
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
         when(userRepository.findByUsername("Nowak")).thenReturn(Optional.of(user2));
 
         assertThatThrownBy(() -> accountService.withdraw(1L, new BigDecimal("50.00"), "Nowak"))
@@ -134,10 +132,6 @@ class AccountServiceTest {
 
     @Test
     void transfer_shouldTransferMoney_whenValidRequest() {
-        Customer customer = new Customer(1L, "Jan", "Kowalski", "77777777777");
-        User user = new User(1L, "Kowal", "123456", Role.USER, customer);
-        Account sourceAccount = new Account("PL123", AccountType.CHECKING, customer);
-        Account targetAccount = new Account("PL124", AccountType.CHECKING, new Customer());
         sourceAccount.setBalance(new BigDecimal("200.00"));
         targetAccount.setBalance(new BigDecimal("50.00"));
         when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
@@ -159,10 +153,6 @@ class AccountServiceTest {
 
     @Test
     void transfer_shouldThrow_whenInsufficientFunds() {
-        Customer customer = new Customer(1L, "Jan", "Kowalski", "77777777777");
-        User user = new User(1L, "Kowal", "123456", Role.USER, customer);
-        Account sourceAccount = new Account("PL123", AccountType.CHECKING, customer);
-        Account targetAccount = new Account("PL124", AccountType.CHECKING, new Customer());
         sourceAccount.setBalance(new BigDecimal("200.00"));
         when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
         when(accountRepository.findById(2L)).thenReturn(Optional.of(targetAccount));
@@ -174,10 +164,6 @@ class AccountServiceTest {
 
     @Test
     void transfer_shouldThrow_whenSourceIsBlocked() {
-        Customer customer = new Customer(1L, "Jan", "Kowalski", "77777777777");
-        User user = new User(1L, "Kowal", "123456", Role.USER, customer);
-        Account sourceAccount = new Account("PL123", AccountType.CHECKING, customer);
-        Account targetAccount = new Account("PL124", AccountType.CHECKING, new Customer());
         sourceAccount.setBalance(new BigDecimal("1.00"));
         sourceAccount.setIsBlocked(true);
         when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
@@ -190,12 +176,10 @@ class AccountServiceTest {
 
     @Test
     void transfer_shouldThrow_whenSourceIsNotYours() {
-        Customer customer1 = new Customer(1L, "Jan", "Kowalski", "77777777777");
         Customer customer2 = new Customer(2L, "Janusz", "Nowak", "55555555555");
         User user2 = new User(2L, "Nowak", "123456", Role.USER, customer2);
-        Account account = new Account("PL123", AccountType.CHECKING, customer1);
         Account targetAccount = new Account("PL124", AccountType.CHECKING, customer2);
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
         when(accountRepository.findById(2L)).thenReturn(Optional.of(targetAccount));
         when(userRepository.findByUsername("Nowak")).thenReturn(Optional.of(user2));
 
@@ -215,9 +199,8 @@ class AccountServiceTest {
 
     @Test
     void blockAccount_shouldSetBlockedToTrue() {
-        Account account = new Account("PL123", AccountType.CHECKING, new Customer());
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
-        when(accountRepository.save(account)).thenReturn(account);
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
+        when(accountRepository.save(sourceAccount)).thenReturn(sourceAccount);
 
         Account result = accountService.blockAccount(1L);
         assertThat(result.getIsBlocked()).isTrue();
@@ -225,10 +208,9 @@ class AccountServiceTest {
 
     @Test
     void unBlockAccount_shouldSetBlockedToFalse() {
-        Account account = new Account("PL123", AccountType.CHECKING, new Customer());
-        account.setIsBlocked(true);
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
-        when(accountRepository.save(account)).thenReturn(account);
+        sourceAccount.setIsBlocked(true);
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
+        when(accountRepository.save(sourceAccount)).thenReturn(sourceAccount);
 
         Account result = accountService.unBlockAccount(1L);
 
@@ -243,8 +225,7 @@ class AccountServiceTest {
 
     @Test
     void findAccountByNumber_shouldReturnAccount_whenExists() {
-        Account account = new Account("PL123", AccountType.CHECKING, new Customer());
-        when(accountRepository.findByAccountNumber("PL123")).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber("PL123")).thenReturn(Optional.of(sourceAccount));
 
         Account result = accountService.findAccountByNumber("PL123");
 
@@ -259,10 +240,6 @@ class AccountServiceTest {
 
     @Test
     void getAllTransactionsForAcc_shouldReturnTransactionList_whenAccountExists() {
-        Customer customer = new Customer(1L, "Jan", "Kowalski", "77777777777");
-        User user = new User(1L, "Kowal", "123456", Role.USER, customer);
-        Account sourceAccount = new Account("PL123", AccountType.CHECKING, customer);
-        Account targetAccount = new Account("PL124", AccountType.CHECKING, new Customer());
         Transaction transaction = new Transaction(
                 TransactionType.TRANSFER, new BigDecimal("100.00"), sourceAccount, targetAccount);
         when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
@@ -279,11 +256,8 @@ class AccountServiceTest {
 
     @Test
     void getAllTransactionsForAcc_shouldThrow_whenSomeoneElseAcc() {
-        Customer customer = new Customer(1L, "Jan", "Kowalski", "77777777777");
         Customer customer2 = new Customer(2L, "Janusz", "Nowak", "55555555555");
         User user = new User(2L, "Nowak", "123456", Role.USER, customer2);
-        Account sourceAccount = new Account("PL123", AccountType.CHECKING, customer);
-        Account targetAccount = new Account("PL124", AccountType.CHECKING, customer2);
         when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
         when(userRepository.findByUsername("Nowak")).thenReturn(Optional.of(user));
 
