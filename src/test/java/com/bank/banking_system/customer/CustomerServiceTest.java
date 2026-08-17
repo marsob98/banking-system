@@ -5,6 +5,7 @@ import com.bank.banking_system.account.AccountRepository;
 import com.bank.banking_system.account.AccountService;
 import com.bank.banking_system.account.AccountType;
 import com.bank.banking_system.account.dto.AccountResponse;
+import com.bank.banking_system.customer.dto.CustomerRequest;
 import com.bank.banking_system.exception.AccountHasActiveAccountsException;
 import com.bank.banking_system.exception.DuplicatePeselException;
 import com.bank.banking_system.transaction.TransactionRepository;
@@ -44,10 +45,11 @@ class CustomerServiceTest {
 
     @Test
     void createCustomer_shouldThrow_whenPeselAlreadyInDataBase() {
+        CustomerRequest customerRequest = new CustomerRequest("Jan", "Kowalski", "12345678901");
         Customer customer = new Customer(1L, "Jan", "Kowalski", "12345678901");
-        when(customerRepository.findByPesel(customer.getPesel())).thenReturn(Optional.of(customer));
+        when(customerRepository.findByPesel(customerRequest.pesel())).thenReturn(Optional.of(customer));
 
-        assertThatThrownBy(() -> customerService.createCustomer(customer))
+        assertThatThrownBy(() -> customerService.createCustomer(customerRequest))
                 .isInstanceOf(DuplicatePeselException.class);
     }
 

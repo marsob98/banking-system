@@ -4,6 +4,8 @@ import com.bank.banking_system.account.Account;
 import com.bank.banking_system.account.AccountRepository;
 import com.bank.banking_system.account.AccountService;
 import com.bank.banking_system.account.dto.AccountResponse;
+import com.bank.banking_system.customer.dto.CustomerRequest;
+import com.bank.banking_system.customer.dto.CustomerResponse;
 import com.bank.banking_system.exception.AccountHasActiveAccountsException;
 import com.bank.banking_system.exception.DuplicatePeselException;
 import com.bank.banking_system.exception.ResourceNotFoundException;
@@ -27,12 +29,13 @@ public class CustomerService {
     }
 
     @Transactional
-    public Customer createCustomer(Customer customer) {
-        customerRepository.findByPesel(customer.getPesel())
+    public CustomerResponse createCustomer(CustomerRequest customerRequest) {
+        customerRepository.findByPesel(customerRequest.pesel())
                 .ifPresent(existing -> {throw new DuplicatePeselException("Pesel already exists");
                 });
-
-        return customerRepository.save(customer);
+        Customer customer = new Customer(null, customerRequest.firstName(), customerRequest.lastName(), customerRequest.pesel());
+        Customer saved = customerRepository.save(customer);
+        return toCustomerResponse(saved);
     }
 
     @Transactional
@@ -58,8 +61,15 @@ public class CustomerService {
     }
 
     @Transactional
-    public List<Customer> getAllCustomers() {
-        return customerRepository.findAll();
+    public List<CustomerResponse> getAllCustomers() {
+        return customerRepository.findAll().stream()
+                .map(this::toCustomerResponse)
+                .toList();
+    }
+
+
+    public CustomerResponse toCustomerResponse(Customer customer) {
+        return new CustomerResponse(customer.getId(), customer.getFirstName(), customer.getLastName());
     }
 
 }

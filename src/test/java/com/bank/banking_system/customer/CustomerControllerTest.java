@@ -1,5 +1,7 @@
 package com.bank.banking_system.customer;
 
+import com.bank.banking_system.customer.dto.CustomerRequest;
+import com.bank.banking_system.customer.dto.CustomerResponse;
 import com.bank.banking_system.security.JwtService;
 import com.bank.banking_system.user.CustomUserDetailsService;
 import org.junit.jupiter.api.Test;
@@ -36,15 +38,17 @@ class CustomerControllerTest {
 
     @Test
     void createCustomer_shouldReturnCreatedCustomer() throws Exception {
-        Customer customer = new Customer(null, "Jan", "Kowalski", "12345678901");
-        String json = objectMapper.writeValueAsString(customer);
-        when(customerService.createCustomer(any(Customer.class))).thenReturn(customer);
+        CustomerRequest customerRequest = new CustomerRequest("Jan", "Kowalski", "12345678901");
+        CustomerResponse customerResponse = new CustomerResponse(1L, "Jan", "Kowalski");
+        String json = objectMapper.writeValueAsString(customerRequest);
+        when(customerService.createCustomer(any(CustomerRequest.class))).thenReturn(customerResponse);
 
         mockMvc.perform(post("/api/customers")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.firstName").value("Jan"));
+                .andExpect(jsonPath("$.firstName").value("Jan"))
+                .andExpect(jsonPath("$.pesel").doesNotExist());
     }
 
     @Test
