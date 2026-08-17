@@ -61,4 +61,16 @@ class CustomerControllerTest {
                         .content(json))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void createCustomer_shouldReturn400_whenPeselIsNull() throws Exception {
+        CustomerRequest customerRequest = new CustomerRequest("Jan", "Kowalski", null);
+        String json = objectMapper.writeValueAsString(customerRequest);
+
+        mockMvc.perform(post("/api/customers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Validation Failed"));
+    }
 }

@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Pattern;
 public record CustomerRequest(
         @NotBlank(message = "First name is required") String firstName,
         @NotBlank(message = "Last name is required") String lastName,
-        @Pattern(regexp = "\\d{11}", message = "PESEL must contain only digits") String pesel
+        @NotBlank(message = "PESEL is required")
+        @Pattern(regexp = "\\d{11}", message = "PESEL must contain only digits")
+        String pesel
 ) {
 }
