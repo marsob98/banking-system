@@ -35,7 +35,7 @@ public class CustomerService {
                 });
         Customer customer = new Customer(null, customerRequest.firstName(), customerRequest.lastName(), customerRequest.pesel());
         Customer saved = customerRepository.save(customer);
-        return toCustomerResponse(saved);
+        return CustomerResponse.from(saved);
     }
 
     @Transactional
@@ -63,13 +63,8 @@ public class CustomerService {
     @Transactional
     public List<CustomerResponse> getAllCustomers() {
         return customerRepository.findAll().stream()
-                .map(this::toCustomerResponse)
+                .map(CustomerResponse::from)
                 .toList();
-    }
-
-
-    public CustomerResponse toCustomerResponse(Customer customer) {
-        return new CustomerResponse(customer.getId(), customer.getFirstName(), customer.getLastName());
     }
 
 }
