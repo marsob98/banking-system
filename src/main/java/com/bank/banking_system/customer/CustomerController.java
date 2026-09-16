@@ -1,6 +1,8 @@
 package com.bank.banking_system.customer;
 
 import com.bank.banking_system.account.dto.AccountResponse;
+import com.bank.banking_system.customer.dto.CustomerRequest;
+import com.bank.banking_system.customer.dto.CustomerResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,13 +20,13 @@ public class CustomerController {
 
 
     @GetMapping
-    public List<Customer> getAllCustomers() {
+    public List<CustomerResponse> getAllCustomers() {
         return customerService.getAllCustomers();
     }
 
     @PostMapping
-    public Customer createCustomer(@Valid @RequestBody Customer customer) {
-        return customerService.createCustomer(customer);
+    public CustomerResponse createCustomer(@Valid @RequestBody CustomerRequest customerRequest) {
+        return customerService.createCustomer(customerRequest);
     }
 
     @DeleteMapping("/{id}")
