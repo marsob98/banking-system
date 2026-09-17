@@ -67,4 +67,11 @@ public class CustomerService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public CustomerResponse getCustomerById(Long id) {
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+        return CustomerResponse.from(customer);
+    }
+
 }

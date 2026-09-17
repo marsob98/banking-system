@@ -39,6 +39,9 @@ public class CustomerController {
         return customerService.getCustomerAccounts(id);
     }
 
-
+    @GetMapping("/{id}")
+    public CustomerResponse getCustomerById(@PathVariable Long id) {
+        return customerService.getCustomerById(id);
+    }
 
 }
