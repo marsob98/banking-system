@@ -34,11 +34,14 @@ public class CustomerController {
         customerService.deleteCustomer(id);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id}/accounts")
     public List<AccountResponse> getCustomerAccounts(@PathVariable Long id) {
         return customerService.getCustomerAccounts(id);
     }
 
-
+    @GetMapping("/{id}")
+    public CustomerResponse getCustomerById(@PathVariable Long id) {
+        return customerService.getCustomerById(id);
+    }
 
 }
