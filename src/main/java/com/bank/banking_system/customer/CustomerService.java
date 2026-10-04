@@ -9,6 +9,8 @@ import com.bank.banking_system.customer.dto.CustomerResponse;
 import com.bank.banking_system.exception.AccountHasActiveAccountsException;
 import com.bank.banking_system.exception.DuplicatePeselException;
 import com.bank.banking_system.exception.ResourceNotFoundException;
+import com.bank.banking_system.user.User;
+import com.bank.banking_system.user.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,13 +21,16 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
     private final AccountRepository accountRepository;
     private final AccountService accountService;
+    private final UserRepository userRepository;
 
     public CustomerService(CustomerRepository customerRepository,
                            AccountRepository accountRepository,
-                           AccountService accountService) {
+                           AccountService accountService,
+                           UserRepository userRepository) {
         this.customerRepository = customerRepository;
         this.accountRepository = accountRepository;
         this.accountService = accountService;
+        this.userRepository = userRepository;
     }
 
     @Transactional
@@ -71,6 +76,17 @@ public class CustomerService {
     public CustomerResponse getCustomerById(Long id) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+        return CustomerResponse.from(customer);
+    }
+
+    @Transactional(readOnly = true)
+    public CustomerResponse getCustomerByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        Customer customer = user.getCustomer();
+        if (customer == null) {
+            throw new ResourceNotFoundException("User does not have a customer");
+        }
         return CustomerResponse.from(customer);
     }
 
