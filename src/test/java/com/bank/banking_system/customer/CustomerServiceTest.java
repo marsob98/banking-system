@@ -6,9 +6,13 @@ import com.bank.banking_system.account.AccountService;
 import com.bank.banking_system.account.AccountType;
 import com.bank.banking_system.account.dto.AccountResponse;
 import com.bank.banking_system.customer.dto.CustomerRequest;
+import com.bank.banking_system.customer.dto.CustomerResponse;
 import com.bank.banking_system.exception.AccountHasActiveAccountsException;
 import com.bank.banking_system.exception.DuplicatePeselException;
+import com.bank.banking_system.exception.ResourceNotFoundException;
 import com.bank.banking_system.transaction.TransactionRepository;
+import com.bank.banking_system.user.User;
+import com.bank.banking_system.user.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -37,10 +41,14 @@ class CustomerServiceTest {
     private TransactionRepository transactionRepository;
 
     @Mock
+    private UserRepository userRepository;
+
+    @Mock
     private AccountService accountService;
 
     @InjectMocks
     private CustomerService customerService;
+
 
 
     @Test
@@ -86,6 +94,40 @@ class CustomerServiceTest {
 
         assertThat(result.get(0).id()).isEqualTo(1L);
 
+    }
+
+    @Test
+    void getCustomerByUsername_shouldThrow_whenUserNotExists() {
+        when(userRepository.findByUsername("Janusz")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> customerService.getCustomerByUsername("Janusz"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("User not found");
+    }
+
+    @Test
+    void getCustomerByUsername_shouldThrow_whenUserHasNoCustomer() {
+        User user = new User();
+        user.setUsername("kowal");
+        user.setCustomer(null);
+        when(userRepository.findByUsername("kowal")).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> customerService.getCustomerByUsername("kowal"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("User does not have a customer");
+    }
+
+    @Test
+    void getCustomerByUsername_shouldReturnCustomer_whenUserHasCustomer() {
+        User user = new User();
+        Customer customer = new Customer(1L, "Jan", "Kowalski", "12345678901");
+        user.setUsername("kowal");
+        user.setCustomer(customer);
+
+        CustomerResponse customerResponse = new CustomerResponse(1L, "Jan", "Kowalski");
+        when(userRepository.findByUsername("kowal")).thenReturn(Optional.of(user));
+
+        assertThat(customerService.getCustomerByUsername("kowal")).isEqualTo(customerResponse);
     }
 
 
