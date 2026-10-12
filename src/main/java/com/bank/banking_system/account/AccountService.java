@@ -86,9 +86,8 @@ public class AccountService {
     }
 
     @Transactional
-    public Account withdraw(Long accountId, BigDecimal amount, String username) {
+    public Account withdraw(Long accountId, BigDecimal amount) {
         Account account = findAccountById(accountId);
-        checkOwnership(account, username);
         validatePositiveAmount(amount);
         checkAccountIsBlocked(account);
         checkInsufficientFunds(account, amount);
@@ -150,7 +149,9 @@ public class AccountService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (!user.getCustomer().getId().equals(account.getCustomer().getId())) {
+        Customer customer = user.getCustomer();
+
+        if (customer == null || !customer.getId().equals(account.getCustomer().getId())) {
             throw new SomeoneElseAccountException("Not your account");
         }
     }

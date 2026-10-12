@@ -11,6 +11,7 @@ import com.bank.banking_system.user.Role;
 import com.bank.banking_system.user.User;
 import com.bank.banking_system.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,6 +24,9 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -90,9 +94,8 @@ class AccountServiceTest {
         sourceAccount.setBalance(new BigDecimal("150.00"));
         when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
         when(accountRepository.save(sourceAccount)).thenReturn(sourceAccount);
-        when(userRepository.findByUsername("Kowal")).thenReturn(Optional.of(user));
 
-        Account result = accountService.withdraw(1L, new BigDecimal("50.00"), user.getUsername());
+        Account result = accountService.withdraw(1L, new BigDecimal("50.00"));
 
         assertThat(result.getBalance()).isEqualByComparingTo("100.00");
     }
@@ -101,9 +104,8 @@ class AccountServiceTest {
     void withdraw_shouldThrow_whenAccountBlocked() {
         sourceAccount.setIsBlocked(true);
         when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
-        when(userRepository.findByUsername("Kowal")).thenReturn(Optional.of(user));
 
-        assertThatThrownBy(() -> accountService.withdraw(1L, new BigDecimal("100.00"), user.getUsername()))
+        assertThatThrownBy(() -> accountService.withdraw(1L, new BigDecimal("100.00")))
                 .isInstanceOf(AccountBlockedException.class);
 
     }
@@ -112,22 +114,28 @@ class AccountServiceTest {
     void withdraw_shouldThrow_whenInsufficientFunds() {
         sourceAccount.setBalance(new BigDecimal("100.00"));
         when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
-        when(userRepository.findByUsername("Kowal")).thenReturn(Optional.of(user));
 
-        assertThatThrownBy(() -> accountService.withdraw(1L, new BigDecimal("150.00"), user.getUsername()))
+        assertThatThrownBy(() -> accountService.withdraw(1L, new BigDecimal("150.00")))
                 .isInstanceOf(InsufficientFundsException.class);
     }
 
+
+
+
     @Test
-    void withdraw_shouldThrow_whenSomeoneElseAcc() {
-        Customer customer2 = new Customer(2L, "Janusz", "Nowak", "55555555555");
-        User user2 = new User(2L, "Nowak", "123456", Role.USER, customer2);
+    @DisplayName("Admin without a customer cannot transfer from a customer's account")
+    void transfer_shouldThrow_whenUserHasNoCustomer() {
+        User admin = new User(3L, "admin", "12345678", Role.ADMIN,null);
         when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
-        when(userRepository.findByUsername("Nowak")).thenReturn(Optional.of(user2));
+        when(accountRepository.findById(2L)).thenReturn(Optional.of(targetAccount));
+        when(userRepository.findByUsername("admin")).thenReturn(Optional.of(admin));
 
-        assertThatThrownBy(() -> accountService.withdraw(1L, new BigDecimal("50.00"), "Nowak"))
-                .isInstanceOf(SomeoneElseAccountException.class);
+        assertThatThrownBy(() -> accountService.transfer(1L,
+                2L,
+                new BigDecimal("100.00"),
+                admin.getUsername())).isInstanceOf(SomeoneElseAccountException.class);
 
+        verify(accountRepository, never()).save(any());
     }
 
     @Test

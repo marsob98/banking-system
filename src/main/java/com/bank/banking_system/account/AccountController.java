@@ -21,8 +21,7 @@ public class AccountController {
     public AccountController(AccountService accountService) {
         this.accountService = accountService;
     }
-
-
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public List<AccountResponse> getAllAccounts() {
         return accountService.getAllAccounts();
@@ -47,22 +46,25 @@ public class AccountController {
     }
 
     @PostMapping
-    public AccountResponse createAccount(@RequestParam AccountType accountType, @RequestParam Long customerId) {
+    public AccountResponse createAccount(@RequestParam AccountType accountType,
+                                         @RequestParam Long customerId) {
         Account account = accountService.createAccount(accountType, customerId);
         return accountService.toResponse(account);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}/deposit")
-    public AccountResponse deposit(@PathVariable Long id, @RequestParam BigDecimal amount) {
+    public AccountResponse deposit(@PathVariable Long id,
+                                   @RequestParam BigDecimal amount) {
         Account account = accountService.deposit(id, amount);
         return accountService.toResponse(account);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}/withdraw")
     public AccountResponse withdraw(@PathVariable Long id,
-                                    @RequestParam BigDecimal amount,
-                                    @AuthenticationPrincipal UserDetails userDetails) {
-        Account account = accountService.withdraw(id, amount, userDetails.getUsername());
+                                    @RequestParam BigDecimal amount) {
+        Account account = accountService.withdraw(id, amount);
         return accountService.toResponse(account);
     }
 

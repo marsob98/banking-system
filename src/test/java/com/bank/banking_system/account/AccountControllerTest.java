@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AccountController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtAccessDeniedHandler.class, JwtAuthEntryPoint.class})
 class AccountControllerTest {
 
     @Autowired
@@ -52,14 +52,9 @@ class AccountControllerTest {
     @MockitoBean
     private JwtService jwtService;
 
-    @MockitoBean
-    private JwtAccessDeniedHandler jwtAccessDeniedHandler;
-
-    @MockitoBean
-    private JwtAuthEntryPoint jwtAuthEntryPoint;
 
 
-    @Test
+       @Test
     void createAccount_shouldReturnCreatedAccount() throws Exception {
         Customer customer = new Customer(1L, "Jan", "Kowalski", "12345678901");
         Account account = new Account("PL123", AccountType.CHECKING, customer);
@@ -85,11 +80,12 @@ class AccountControllerTest {
                 new BigDecimal("100.00"), false, "Jan Kowalski");
         when(accountService.getAllAccounts()).thenReturn(List.of(response));
 
-        mockMvc.perform(get("/api/accounts").with(user("Nowak").roles("USER")))
+        mockMvc.perform(get("/api/accounts").with(user("Nowak").roles("ADMIN")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].accountNumber").value("PL123"))
                 .andExpect(jsonPath("$[0].balance").value(100.00));
     }
+
 
     @Test
     void getAllTransactionsForAcc_shouldReturnTransactionList() throws Exception {
@@ -113,4 +109,5 @@ class AccountControllerTest {
         mockMvc.perform(get("/api/accounts/number/PL123").with(user("Nowak").roles("USER")))
                 .andExpect(status().isNotFound());
     }
+
 }
