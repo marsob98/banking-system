@@ -1,9 +1,15 @@
 package com.bank.banking_system.account;
 
+import com.bank.banking_system.account.dto.RecipientVerificationRequest;
 import com.bank.banking_system.account.dto.TransactionResponse;
+import com.bank.banking_system.account.dto.VerificationResult;
 import com.bank.banking_system.customer.Customer;
-import com.bank.banking_system.customer.CustomerRepository;
-import com.bank.banking_system.exception.*;
+import com.bank.banking_system.exception.AccountBlockedException;
+import com.bank.banking_system.exception.InsufficientFundsException;
+import com.bank.banking_system.exception.NegativeBalanceException;
+import com.bank.banking_system.exception.ResourceNotFoundException;
+import com.bank.banking_system.exception.SameAccountTransferException;
+import com.bank.banking_system.exception.SomeoneElseAccountException;
 import com.bank.banking_system.transaction.Transaction;
 import com.bank.banking_system.transaction.TransactionRepository;
 import com.bank.banking_system.transaction.TransactionType;
@@ -11,6 +17,7 @@ import com.bank.banking_system.user.Role;
 import com.bank.banking_system.user.User;
 import com.bank.banking_system.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,6 +30,9 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,8 +41,6 @@ class AccountServiceTest {
     @Mock
     private AccountRepository accountRepository;
 
-    @Mock
-    private CustomerRepository customerRepository;
 
     @Mock
     private TransactionRepository transactionRepository;
@@ -90,9 +98,8 @@ class AccountServiceTest {
         sourceAccount.setBalance(new BigDecimal("150.00"));
         when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
         when(accountRepository.save(sourceAccount)).thenReturn(sourceAccount);
-        when(userRepository.findByUsername("Kowal")).thenReturn(Optional.of(user));
 
-        Account result = accountService.withdraw(1L, new BigDecimal("50.00"), user.getUsername());
+        Account result = accountService.withdraw(1L, new BigDecimal("50.00"));
 
         assertThat(result.getBalance()).isEqualByComparingTo("100.00");
     }
@@ -101,9 +108,8 @@ class AccountServiceTest {
     void withdraw_shouldThrow_whenAccountBlocked() {
         sourceAccount.setIsBlocked(true);
         when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
-        when(userRepository.findByUsername("Kowal")).thenReturn(Optional.of(user));
 
-        assertThatThrownBy(() -> accountService.withdraw(1L, new BigDecimal("100.00"), user.getUsername()))
+        assertThatThrownBy(() -> accountService.withdraw(1L, new BigDecimal("100.00")))
                 .isInstanceOf(AccountBlockedException.class);
 
     }
@@ -112,22 +118,28 @@ class AccountServiceTest {
     void withdraw_shouldThrow_whenInsufficientFunds() {
         sourceAccount.setBalance(new BigDecimal("100.00"));
         when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
-        when(userRepository.findByUsername("Kowal")).thenReturn(Optional.of(user));
 
-        assertThatThrownBy(() -> accountService.withdraw(1L, new BigDecimal("150.00"), user.getUsername()))
+        assertThatThrownBy(() -> accountService.withdraw(1L, new BigDecimal("150.00")))
                 .isInstanceOf(InsufficientFundsException.class);
     }
 
+
+
+
     @Test
-    void withdraw_shouldThrow_whenSomeoneElseAcc() {
-        Customer customer2 = new Customer(2L, "Janusz", "Nowak", "55555555555");
-        User user2 = new User(2L, "Nowak", "123456", Role.USER, customer2);
+    @DisplayName("Admin without a customer cannot transfer from a customer's account")
+    void transfer_shouldThrow_whenUserHasNoCustomer() {
+        User admin = new User(3L, "admin", "12345678", Role.ADMIN,null);
         when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
-        when(userRepository.findByUsername("Nowak")).thenReturn(Optional.of(user2));
+        when(accountRepository.findById(2L)).thenReturn(Optional.of(targetAccount));
+        when(userRepository.findByUsername("admin")).thenReturn(Optional.of(admin));
 
-        assertThatThrownBy(() -> accountService.withdraw(1L, new BigDecimal("50.00"), "Nowak"))
-                .isInstanceOf(SomeoneElseAccountException.class);
+        assertThatThrownBy(() -> accountService.transfer(1L,
+                2L,
+                new BigDecimal("100.00"),
+                admin.getUsername())).isInstanceOf(SomeoneElseAccountException.class);
 
+        verify(accountRepository, never()).save(any());
     }
 
     @Test
@@ -192,8 +204,19 @@ class AccountServiceTest {
     }
 
     @Test
+    void createAccount_shouldCreateAccountForLoggedUser() {
+        when(userRepository.findByUsername(user.getUsername())).thenReturn(Optional.of(user));
+        when(accountRepository.save(any(Account.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Account result = accountService.createAccount(AccountType.SAVINGS, user.getUsername());
+
+        assertThat(result.getCustomer()).isSameAs(customer);
+    }
+
+    @Test
     void createAccount_shouldThrow_whenCustomerNotFound() {
-        assertThatThrownBy(() -> accountService.createAccount(AccountType.CHECKING, 1L))
+        assertThatThrownBy(() -> accountService.createAccount(AccountType.CHECKING, "someone"))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
@@ -251,7 +274,7 @@ class AccountServiceTest {
         List<TransactionResponse> result = accountService.getAllTransactionsForAcc(1L, "Kowal");
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).amount()).isEqualByComparingTo("100.00");
+        assertThat(result.getFirst().amount()).isEqualByComparingTo("100.00");
     }
 
     @Test
@@ -263,6 +286,42 @@ class AccountServiceTest {
 
         assertThatThrownBy(() -> accountService.getAllTransactionsForAcc(1L, "Nowak"))
                 .isInstanceOf(SomeoneElseAccountException.class);
+    }
+
+    @Test
+    void verifyRecipient_shouldReturnMatch_whenValid() {
+        RecipientVerificationRequest request = new RecipientVerificationRequest(
+                "PL123", "Jan", "Kowalski"
+        );
+        when(accountRepository.findByAccountNumber("PL123")).thenReturn(Optional.of(sourceAccount));
+        assertThat(accountService.verifyRecipient(request)).isEqualTo(VerificationResult.MATCH);
+    }
+
+    @Test
+    void verifyRecipient_shouldReturnNoMatch_whenAccountDoesNotExist() {
+        RecipientVerificationRequest request = new RecipientVerificationRequest(
+                "PL124", "Piotr", "Nowak"
+        );
+        when(accountRepository.findByAccountNumber("PL124")).thenReturn(Optional.empty());
+        assertThat(accountService.verifyRecipient(request)).isEqualTo(VerificationResult.NO_MATCH);
+    }
+
+    @Test
+    void verifyRecipient_shouldReturnNoMatch_whenFirstNameDoesNotMatch() {
+        RecipientVerificationRequest request = new RecipientVerificationRequest(
+                "PL123", "Piotr", "Kowalski"
+        );
+        when(accountRepository.findByAccountNumber("PL123")).thenReturn(Optional.of(sourceAccount));
+        assertThat(accountService.verifyRecipient(request)).isEqualTo(VerificationResult.NO_MATCH);
+    }
+
+    @Test
+    void verifyRecipient_shouldReturnMatch_whenNamesDifferOnlyInCaseAndWhiteSpaces() {
+        RecipientVerificationRequest request = new RecipientVerificationRequest(
+                "PL123", " JAN ", " KoWaLsKi   "
+        );
+        when(accountRepository.findByAccountNumber("PL123")).thenReturn(Optional.of(sourceAccount));
+        assertThat(accountService.verifyRecipient(request)).isEqualTo(VerificationResult.MATCH);
     }
 
 
