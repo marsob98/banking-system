@@ -2,11 +2,18 @@ package com.bank.banking_system.account;
 
 import com.bank.banking_system.account.dto.AccountResponse;
 import com.bank.banking_system.account.dto.BankStatsResponse;
+import com.bank.banking_system.account.dto.RecipientVerificationRequest;
 import com.bank.banking_system.account.dto.TransactionResponse;
 import com.bank.banking_system.account.dto.TransferResponse;
+import com.bank.banking_system.account.dto.VerificationResult;
 import com.bank.banking_system.customer.Customer;
 import com.bank.banking_system.customer.CustomerRepository;
-import com.bank.banking_system.exception.*;
+import com.bank.banking_system.exception.AccountBlockedException;
+import com.bank.banking_system.exception.InsufficientFundsException;
+import com.bank.banking_system.exception.NegativeBalanceException;
+import com.bank.banking_system.exception.ResourceNotFoundException;
+import com.bank.banking_system.exception.SameAccountTransferException;
+import com.bank.banking_system.exception.SomeoneElseAccountException;
 import com.bank.banking_system.transaction.Transaction;
 import com.bank.banking_system.transaction.TransactionRepository;
 import com.bank.banking_system.transaction.TransactionType;
@@ -17,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class AccountService {
@@ -54,14 +62,25 @@ public class AccountService {
     }
 
     @Transactional
-    public Account createAccount(AccountType accountType, Long customerId) {
-        Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+    public Account createAccount(AccountType accountType, String username) {
+        Customer customer = getCustomerFromUser(username);
 
-        String accountNumber = "PL" + System. currentTimeMillis();
+        String accountNumber = "PL" + System.currentTimeMillis();
 
         Account account = new Account(accountNumber, accountType, customer);
         return accountRepository.save(account);
+    }
+
+    private Customer getCustomerFromUser(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Customer customer = user.getCustomer();
+
+        if (customer == null) {
+            throw new ResourceNotFoundException("No customer linked to this user");
+        }
+        return customer;
     }
 
     @Transactional
@@ -131,14 +150,7 @@ public class AccountService {
 
     @Transactional
     public List<AccountResponse> getAccountsForUser(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        Customer customer = user.getCustomer();
-
-        if (customer == null) {
-            throw new ResourceNotFoundException("No customer linked to this user");
-        }
+        Customer customer = getCustomerFromUser(username);
 
         return accountRepository.findByCustomerId(customer.getId()).stream()
                 .map(this::toResponse)
@@ -170,6 +182,24 @@ public class AccountService {
         account.setIsBlocked(false);
 
         return accountRepository.save(account);
+    }
+
+    @Transactional(readOnly = true)
+    public VerificationResult verifyRecipient(RecipientVerificationRequest request) {
+        return accountRepository.findByAccountNumber(request.accountNumber())
+                .filter(account -> namesMatch(account.getCustomer(), request))
+                .map(account -> VerificationResult.MATCH)
+                .orElse(VerificationResult.NO_MATCH);
+
+    }
+
+    private boolean namesMatch(Customer customer, RecipientVerificationRequest request) {
+        return normalize(request.firstName()).equals(normalize(customer.getFirstName())) &&
+                normalize(request.lastName()).equals(normalize(customer.getLastName()));
+    }
+
+    private String normalize(String text) {
+        return text.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
     }
 
     public AccountResponse toResponse(Account account) {

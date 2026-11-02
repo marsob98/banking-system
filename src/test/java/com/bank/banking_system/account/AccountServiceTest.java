@@ -1,9 +1,15 @@
 package com.bank.banking_system.account;
 
+import com.bank.banking_system.account.dto.RecipientVerificationRequest;
 import com.bank.banking_system.account.dto.TransactionResponse;
+import com.bank.banking_system.account.dto.VerificationResult;
 import com.bank.banking_system.customer.Customer;
-import com.bank.banking_system.customer.CustomerRepository;
-import com.bank.banking_system.exception.*;
+import com.bank.banking_system.exception.AccountBlockedException;
+import com.bank.banking_system.exception.InsufficientFundsException;
+import com.bank.banking_system.exception.NegativeBalanceException;
+import com.bank.banking_system.exception.ResourceNotFoundException;
+import com.bank.banking_system.exception.SameAccountTransferException;
+import com.bank.banking_system.exception.SomeoneElseAccountException;
 import com.bank.banking_system.transaction.Transaction;
 import com.bank.banking_system.transaction.TransactionRepository;
 import com.bank.banking_system.transaction.TransactionType;
@@ -35,8 +41,6 @@ class AccountServiceTest {
     @Mock
     private AccountRepository accountRepository;
 
-    @Mock
-    private CustomerRepository customerRepository;
 
     @Mock
     private TransactionRepository transactionRepository;
@@ -200,8 +204,19 @@ class AccountServiceTest {
     }
 
     @Test
+    void createAccount_shouldCreateAccountForLoggedUser() {
+        when(userRepository.findByUsername(user.getUsername())).thenReturn(Optional.of(user));
+        when(accountRepository.save(any(Account.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Account result = accountService.createAccount(AccountType.SAVINGS, user.getUsername());
+
+        assertThat(result.getCustomer()).isSameAs(customer);
+    }
+
+    @Test
     void createAccount_shouldThrow_whenCustomerNotFound() {
-        assertThatThrownBy(() -> accountService.createAccount(AccountType.CHECKING, 1L))
+        assertThatThrownBy(() -> accountService.createAccount(AccountType.CHECKING, "someone"))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
@@ -259,7 +274,7 @@ class AccountServiceTest {
         List<TransactionResponse> result = accountService.getAllTransactionsForAcc(1L, "Kowal");
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).amount()).isEqualByComparingTo("100.00");
+        assertThat(result.getFirst().amount()).isEqualByComparingTo("100.00");
     }
 
     @Test
@@ -271,6 +286,42 @@ class AccountServiceTest {
 
         assertThatThrownBy(() -> accountService.getAllTransactionsForAcc(1L, "Nowak"))
                 .isInstanceOf(SomeoneElseAccountException.class);
+    }
+
+    @Test
+    void verifyRecipient_shouldReturnMatch_whenValid() {
+        RecipientVerificationRequest request = new RecipientVerificationRequest(
+                "PL123", "Jan", "Kowalski"
+        );
+        when(accountRepository.findByAccountNumber("PL123")).thenReturn(Optional.of(sourceAccount));
+        assertThat(accountService.verifyRecipient(request)).isEqualTo(VerificationResult.MATCH);
+    }
+
+    @Test
+    void verifyRecipient_shouldReturnNoMatch_whenAccountDoesNotExist() {
+        RecipientVerificationRequest request = new RecipientVerificationRequest(
+                "PL124", "Piotr", "Nowak"
+        );
+        when(accountRepository.findByAccountNumber("PL124")).thenReturn(Optional.empty());
+        assertThat(accountService.verifyRecipient(request)).isEqualTo(VerificationResult.NO_MATCH);
+    }
+
+    @Test
+    void verifyRecipient_shouldReturnNoMatch_whenFirstNameDoesNotMatch() {
+        RecipientVerificationRequest request = new RecipientVerificationRequest(
+                "PL123", "Piotr", "Kowalski"
+        );
+        when(accountRepository.findByAccountNumber("PL123")).thenReturn(Optional.of(sourceAccount));
+        assertThat(accountService.verifyRecipient(request)).isEqualTo(VerificationResult.NO_MATCH);
+    }
+
+    @Test
+    void verifyRecipient_shouldReturnMatch_whenNamesDifferOnlyInCaseAndWhiteSpaces() {
+        RecipientVerificationRequest request = new RecipientVerificationRequest(
+                "PL123", " JAN ", " KoWaLsKi   "
+        );
+        when(accountRepository.findByAccountNumber("PL123")).thenReturn(Optional.of(sourceAccount));
+        assertThat(accountService.verifyRecipient(request)).isEqualTo(VerificationResult.MATCH);
     }
 
 

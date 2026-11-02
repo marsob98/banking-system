@@ -3,20 +3,25 @@ package com.bank.banking_system.security;
 import com.bank.banking_system.SecurityConfig;
 import com.bank.banking_system.account.AccountController;
 import com.bank.banking_system.account.AccountService;
+import com.bank.banking_system.account.dto.RecipientVerificationRequest;
 import com.bank.banking_system.user.CustomUserDetailsService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.ObjectMapper;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -35,6 +40,12 @@ class SecurityRulesTest {
 
     @MockitoBean
     private JwtService jwtService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    RecipientVerificationRequest request = new RecipientVerificationRequest
+            ("PL123", "Jan", "Nowak");
 
 
     @Test
@@ -96,5 +107,23 @@ class SecurityRulesTest {
         verify(accountService, never()).deposit(any(),any());
     }
 
+    @Test
+    void verifyRecipient_shouldReturn401_whenNoAuth() throws Exception {
+        mockMvc.perform(post("/api/accounts/verify-recipient")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(accountService);
+    }
+
+    @Test
+    void verifyRecipient_shouldReturn200_whenUser() throws Exception {
+        mockMvc.perform(post("/api/accounts/verify-recipient")
+                        .with(user("Nowak").roles("USER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+    }
 
 }

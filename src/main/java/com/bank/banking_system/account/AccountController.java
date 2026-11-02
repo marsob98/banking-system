@@ -1,12 +1,24 @@
 package com.bank.banking_system.account;
 
 import com.bank.banking_system.account.dto.AccountResponse;
+import com.bank.banking_system.account.dto.RecipientVerificationRequest;
+import com.bank.banking_system.account.dto.RecipientVerificationResponse;
 import com.bank.banking_system.account.dto.TransactionResponse;
 import com.bank.banking_system.account.dto.TransferResponse;
+import com.bank.banking_system.account.dto.VerificationResult;
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -33,22 +45,23 @@ public class AccountController {
                                                               @AuthenticationPrincipal UserDetails userDetails) {
         return accountService.getAllTransactionsForAcc(id, userDetails.getUsername());
     }
-
-    @GetMapping("/number/{accountNumber}")
-    public AccountResponse findAccountByNumber(@PathVariable String accountNumber) {
-        Account accountByNumber = accountService.findAccountByNumber(accountNumber);
-        return accountService.toResponse(accountByNumber);
-    }
+    
 
     @GetMapping("/my")
     public List<AccountResponse> getMyAccounts(@AuthenticationPrincipal UserDetails userDetails) {
         return accountService.getAccountsForUser(userDetails.getUsername());
     }
 
+    @PostMapping("/verify-recipient")
+    public RecipientVerificationResponse verifyRecipient(@Valid @RequestBody RecipientVerificationRequest request) {
+        VerificationResult verificationResult = accountService.verifyRecipient(request);
+        return new RecipientVerificationResponse(verificationResult);
+    }
+
     @PostMapping
     public AccountResponse createAccount(@RequestParam AccountType accountType,
-                                         @RequestParam Long customerId) {
-        Account account = accountService.createAccount(accountType, customerId);
+                                         @AuthenticationPrincipal UserDetails userDetails) {
+        Account account = accountService.createAccount(accountType, userDetails.getUsername());
         return accountService.toResponse(account);
     }
 

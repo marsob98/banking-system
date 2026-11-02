@@ -2,9 +2,10 @@ package com.bank.banking_system.account;
 
 import com.bank.banking_system.SecurityConfig;
 import com.bank.banking_system.account.dto.AccountResponse;
+import com.bank.banking_system.account.dto.RecipientVerificationRequest;
 import com.bank.banking_system.account.dto.TransactionResponse;
+import com.bank.banking_system.account.dto.VerificationResult;
 import com.bank.banking_system.customer.Customer;
-import com.bank.banking_system.exception.ResourceNotFoundException;
 import com.bank.banking_system.security.JwtAccessDeniedHandler;
 import com.bank.banking_system.security.JwtAuthEntryPoint;
 import com.bank.banking_system.security.JwtService;
@@ -15,14 +16,17 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -49,12 +53,14 @@ class AccountControllerTest {
     @MockitoBean
     private CustomUserDetailsService customUserDetailsService;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @MockitoBean
     private JwtService jwtService;
 
 
-
-       @Test
+    @Test
     void createAccount_shouldReturnCreatedAccount() throws Exception {
         Customer customer = new Customer(1L, "Jan", "Kowalski", "12345678901");
         Account account = new Account("PL123", AccountType.CHECKING, customer);
@@ -62,12 +68,11 @@ class AccountControllerTest {
                 1L, "PL123", AccountType.CHECKING,
                 new BigDecimal("100.00"), false, "Jan Kowalski");
 
-        when(accountService.createAccount(AccountType.SAVINGS, 1L)).thenReturn(account);
+        when(accountService.createAccount(AccountType.CHECKING, "kowal")).thenReturn(account);
         when(accountService.toResponse(any(Account.class))).thenReturn(response);
 
-        mockMvc.perform(post("/api/accounts").with(user("Nowak").roles("USER"))
-                        .param("accountType", "SAVINGS")
-                        .param("customerId", "1"))
+        mockMvc.perform(post("/api/accounts").with(user("kowal").roles("USER"))
+                        .param("accountType", "CHECKING"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accountNumber").value("PL123"));
 
@@ -102,12 +107,41 @@ class AccountControllerTest {
     }
 
     @Test
-    void findAccountByNumber_shouldReturn404_whenNotFound() throws Exception {
-        when(accountService.findAccountByNumber("PL123"))
-                .thenThrow(new ResourceNotFoundException("Account not found"));
+    void verifyRecipient_shouldReturnMatch() throws Exception {
+        RecipientVerificationRequest request = new RecipientVerificationRequest
+                ("PL123", "Jan", "Kowalski");
+        when(accountService.verifyRecipient(request)).thenReturn(VerificationResult.MATCH);
 
-        mockMvc.perform(get("/api/accounts/number/PL123").with(user("Nowak").roles("USER")))
-                .andExpect(status().isNotFound());
+        mockMvc.perform(post("/api/accounts/verify-recipient").with(user("Jan").roles("USER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.verificationResult").value("MATCH"));
     }
 
+    @Test
+    void verifyRecipient_shouldReturn200WithNoMatch() throws Exception {
+        RecipientVerificationRequest request = new RecipientVerificationRequest
+                ("PL123", "Jan", "Kowalski");
+        when(accountService.verifyRecipient(request)).thenReturn(VerificationResult.NO_MATCH);
+
+        mockMvc.perform(post("/api/accounts/verify-recipient").with(user("Piotr").roles("USER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.verificationResult").value("NO_MATCH"));
+    }
+
+    @Test
+    void verifyRecipient_shouldReturn400_whenAccountNumberIsBlank() throws Exception {
+        RecipientVerificationRequest request = new RecipientVerificationRequest
+                ("", "Jan", "Kowalski");
+
+        mockMvc.perform(post("/api/accounts/verify-recipient").with(user("Piotr").roles("USER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(accountService);
+
+    }
 }
