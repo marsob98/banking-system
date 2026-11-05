@@ -1,18 +1,18 @@
 # Banking System API
 
-REST API for a simple banking system, built with Spring Boot as a portfolio project.
+REST API for a simple banking system, built with Spring Boot as a portfolio project, with one SOAP web service for recipient verification.
 Clients register, open accounts and send transfers. Bank staff (`ADMIN`) handle cash deposits and withdrawals, block accounts and manage customers.
 
 ## Tech stack
 
-Java 21 · Spring Boot 4 · Spring Security + JWT · Spring Data JPA / Hibernate · PostgreSQL 16 · Docker Compose · JUnit 6 · Mockito · Testcontainers · SpringDoc OpenAPI (Swagger UI)
+Java 21 · Spring Boot 4 · Spring Security + JWT · Spring Data JPA / Hibernate · Apache CXF (SOAP, JAX-WS) · PostgreSQL 16 · Docker Compose · JUnit 6 · Mockito · Testcontainers · SpringDoc OpenAPI (Swagger UI)
 
 ## Features
 
 - Registration and login with JWT, roles `USER` and `ADMIN`
 - Clients open accounts for themselves and see only their own accounts and transaction history
 - Transfers between accounts, with balance and blocked-account checks
-- Recipient verification: the client sends an account number and the recipient's name and gets back only `MATCH` or `NO_MATCH`
+- Recipient verification: the client sends an account number and the recipient's name and gets back only `MATCH` or `NO_MATCH`, over REST or SOAP
 - Cash deposits and withdrawals, done only by bank staff
 - Admin: customer management, blocking and unblocking accounts, bank statistics
 
@@ -51,22 +51,23 @@ docker exec -it bankdb psql -U postgres -d bankdb -c "UPDATE users SET role = 'A
 
 ## Main endpoints
 
-| Method | Endpoint | Access                      | Description                                 |
-|--------|---|-----------------------------|---------------------------------------------|
-| POST   | `/api/auth/register` | public                      | Create a user and customer                  |
-| POST   | `/api/auth/login` | public                      | Returns a JWT                               |
-| GET    | `/api/accounts/my` | logged in                   | The client's own accounts                   |
-| POST   | `/api/accounts` | logged in                   | Open an account for the logged-in client    |
-| GET    | `/api/accounts/{id}/transactions` | account owner               | Transaction history                         |
-| PUT    | `/api/accounts/transfer` | owner of the source account | Transfer money                              |
-| POST   | `/api/accounts/verify-recipient` | logged in                   | Check recipient name against account number |
+| Method | Endpoint                                | Access                      | Description                                 |
+|--------|-----------------------------------------|-----------------------------|---------------------------------------------|
+| POST   | `/api/auth/register`                    | public                      | Create a user and customer                  |
+| POST   | `/api/auth/login`                       | public                      | Returns a JWT                               |
+| GET    | `/api/accounts/my`                      | logged in                   | The client's own accounts                   |
+| POST   | `/api/accounts`                         | logged in                   | Open an account for the logged-in client    |
+| GET    | `/api/accounts/{id}/transactions`       | account owner               | Transaction history                         |
+| PUT    | `/api/accounts/transfer`                | owner of the source account | Transfer money                              |
+| POST   | `/api/accounts/verify-recipient`        | logged in                   | Check recipient name against account number |
 | PUT    | `/api/accounts/{id}/deposit`, `/withdraw` | ADMIN                       | Cash operations                             |
-| PUT    | `/api/accounts/{id}/block`, `/unblock` | ADMIN                       | Block or unblock an account                 |
-| *      | `/api/customers/**` | ADMIN                       | Customer management (except `/me`)          |
-| GET | `/api/transactions` | ADMIN | All transactions in the bank |
-| GET | `/api/stats`, `/api/stats/sum` | ADMIN | Bank statistics and total balance |
+| PUT    | `/api/accounts/{id}/block`, `/unblock`  | ADMIN                       | Block or unblock an account                 |
+| *      | `/api/customers/**`                     | ADMIN                       | Customer management (except `/me`)          |
+| GET    | `/api/transactions`                     | ADMIN                       | All transactions in the bank                |
+| GET    | `/api/stats`, `/api/stats/sum`          | ADMIN                       | Bank statistics and total balance           |
+| POST   | `/ws/payee-verification`                | logged in                   | Recipient verification over SOAP            |
 
-The full list is in Swagger UI.
+The full REST list is in Swagger UI. The SOAP service is described by its WSDL at `/ws/payee-verification?wsdl` (it also needs a JWT).
 
 ## Design decisions
 
@@ -78,10 +79,12 @@ The full list is in Swagger UI.
 - **Invalid JWT returns 401, not 500.** Expired or malformed tokens are handled in the filter and return a JSON 401 response.
 - **DTOs instead of entities.** Entities are never sent to the client: responses are built from DTO records, and JSON request bodies are records validated with Bean Validation.
 - **Package by feature:** `account`, `customer`, `transaction`, `user`, `security`.
+- **One service, two entry points.** Recipient verification is available over REST and SOAP (Apache CXF, code-first). The REST controller and the SOAP endpoint only translate the input and call the same `AccountService.verifyRecipient()`, so the business logic doesn't depend on the protocol.
+- **SOAP errors.** Bean Validation runs only for REST, so the SOAP endpoint checks blank fields itself and returns a SOAP Fault with the code `Client`. A missing or invalid JWT is rejected before the request reaches CXF, so it gets the same JSON 401 as REST. This is a deliberate simplification: a real partner integration would use WS-Security or mutual TLS.
 
 ## Tests
 
-- Unit tests for services (JUnit 6, Mockito)
+- Unit tests for services and the SOAP endpoint (JUnit 6, Mockito)
 - Web layer tests with `@WebMvcTest`, including security rules (401 and 403 for each role)
 - Integration tests on a real PostgreSQL with Testcontainers, with a shared base class so the Spring context is cached between test classes
 
@@ -94,8 +97,7 @@ Run all tests (Docker must be running):
 ## Status and roadmap
 
 The project is in active development. Next steps:
-
-- [ ] SOAP endpoint for recipient verification (Apache CXF), in progress
+- [ ] Integration test for the SOAP endpoint with a client generated from the WSDL
 - [ ] Concurrent transfers: integration test that reproduces a lost balance update (in progress), then optimistic locking (`@Version`) to fix it
 - [ ] Account numbers that can't be guessed (currently based on a timestamp)
 - [ ] CI with GitHub Actions
